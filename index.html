@@ -3,82 +3,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JARVIS - Iron Man Mark-85 Armor System</title>
+  <title>JARVIS - Iron Man Mark-85 HUD Interface</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       margin: 0;
       overflow: hidden;
       background-color: #020813;
       font-family: 'Courier New', Courier, monospace;
       color: #00f0ff;
+      user-select: none;
     }
     #canvas-container {
       width: 100vw;
       height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
     video {
       transform: scaleX(-1);
       position: absolute;
-      top: 15px;
-      right: 15px;
-      width: 130px;
-      height: 95px;
+      top: 20px;
+      right: 20px;
+      width: 140px;
+      height: 100px;
       border-radius: 8px;
       border: 1.5px solid #00f0ff;
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
       z-index: 10;
+      object-fit: cover;
     }
+
+    /* KHUNG GIAO DIỆN HUD */
     .hud-overlay {
       position: absolute;
-      top: 15px;
-      left: 20px;
+      top: 20px;
+      left: 25px;
       pointer-events: none;
       z-index: 10;
-      text-shadow: 0 0 8px #00f0ff;
+      text-shadow: 0 0 10px #00f0ff;
     }
     .hud-title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: bold;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
     }
     .hud-status {
       font-size: 12px;
       color: #00ffcc;
-      margin-top: 5px;
+      margin-top: 6px;
+    }
+    .voice-status {
+      font-size: 11px;
+      color: #ffaa00;
+      margin-top: 4px;
     }
 
     /* BẢNG ĐIỀU KHIỂN JARVIS */
     #control-panel {
       position: absolute;
-      bottom: 30px;
-      right: -350px;
-      width: 280px;
-      padding: 18px;
-      background: rgba(2, 12, 27, 0.9);
+      bottom: 40px;
+      right: -380px;
+      width: 320px;
+      padding: 20px;
+      background: rgba(2, 12, 27, 0.92);
       border: 1.5px solid #00f0ff;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
-      border-radius: 8px;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+      border-radius: 10px;
       z-index: 30;
       transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
     }
     #control-panel.active {
-      right: 20px;
+      right: 30px;
     }
     .panel-header {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: bold;
       border-bottom: 1px solid #00f0ff;
-      padding-bottom: 5px;
-      margin-bottom: 8px;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
       color: #00f0ff;
-    }
-    .panel-item {
-      font-size: 11px;
-      margin: 6px 0;
       display: flex;
       justify-content: space-between;
     }
+    .panel-item {
+      font-size: 12px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* HIỆU ỨNG VÒNG TÂM NGẮM VÀ THƯỚC ĐO CÔNG NGHỆ */
+    .hud-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      border: 1px dashed rgba(0, 240, 255, 0.25);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 5;
+      animation: spin 20s linear infinite;
+    }
+    @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
     #loading {
       position: absolute;
       top: 50%;
@@ -98,19 +132,24 @@
 </head>
 <body>
 
-  <div id="loading">INITIALIZING MARK-85 HOLOGRAM...</div>
+  <div id="loading">INITIALIZING J.A.R.V.I.S. SYSTEM...</div>
+  <div class="hud-crosshair"></div>
   
   <div class="hud-overlay">
-    <div class="hud-title">MARK-85 ARMOR HUD</div>
-    <div id="hud-mode" class="hud-status">WAITING FOR HAND SIGNALS</div>
+    <div class="hud-title">MARK-85 HUD SYSTEM</div>
+    <div id="hud-mode" class="hud-status">WAITING FOR HAND / VOICE SIGNALS</div>
+    <div id="voice-hud" class="voice-status">VOICE COMMAND: SAY "CHÀO"</div>
   </div>
 
   <div id="control-panel">
-    <div class="panel-header">JARVIS CONTROL PANEL</div>
-    <div class="panel-item"><span>ARMOR MODEL:</span><span style="color:#00ffcc;">MARK 85 (HD)</span></div>
-    <div class="panel-item"><span>ARC REACTOR:</span><span style="color:#00ffcc;">ONLINE (100%)</span></div>
-    <div class="panel-item"><span>INTEGRITY:</span><span style="color:#00ffcc;">100% STABLE</span></div>
-    <div class="panel-item"><span>GESTURE:</span><span style="color:#00f0ff;">SWIPE TOGGLE</span></div>
+    <div class="panel-header">
+      <span>J.A.R.V.I.S DIAGNOSTICS</span>
+      <span style="color:#00ffcc;">ONLINE</span>
+    </div>
+    <div class="panel-item"><span>ARMOR SYSTEM:</span><span style="color:#00ffcc;">MARK 85 DEPLOYED</span></div>
+    <div class="panel-item"><span>ARC REACTOR:</span><span style="color:#00ffcc;">100% (STABLE)</span></div>
+    <div class="panel-item"><span>VOICE CONTROL:</span><span style="color:#00f0ff;">LISTENING ("CHÀO")</span></div>
+    <div class="panel-item"><span>GESTURE SENSOR:</span><span style="color:#00f0ff;">HAND TRACKING ACTIVE</span></div>
   </div>
 
   <video id="input-video" autoplay playsinline></video>
@@ -120,6 +159,7 @@
     const videoElement = document.getElementById('input-video');
     const loadingElement = document.getElementById('loading');
     const hudMode = document.getElementById('hud-mode');
+    const voiceHud = document.getElementById('voice-hud');
     const controlPanel = document.getElementById('control-panel');
     
     // 1. THREE.JS SCENE SETUP
@@ -132,24 +172,23 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-    // 2. DỰNG MÔ HÌNH BỘ GIÁP NÉT ĐẸP (GEOMETRIC HOLOGRAM MESH)
+    // 2. DỰNG TẠO HÌNH BỘ GIÁP IRON MAN MARK-85 HOLOGRAM 3D
     const armorGroup = new THREE.Group();
 
-    // Vật liệu Hologram sắc nét
     const wireMaterial = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.6
+      opacity: 0.65
     });
 
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: 0x00ffff,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.9
     });
 
-    // A. MŨ BẢO HIỂM IRON MAN (HELMET)
+    // A. MŨ BẢO HIỂM (HELMET)
     const helmetGeo = new THREE.ConeGeometry(0.55, 0.9, 8, 4);
     helmetGeo.rotateX(Math.PI);
     const helmet = new THREE.Mesh(helmetGeo, wireMaterial);
@@ -157,13 +196,13 @@
     helmet.scale.set(1, 1.1, 0.85);
     armorGroup.add(helmet);
 
-    // KÍNH MẮT RỰC SÁNG (VISOR)
+    // MẮT SÁNG (VISOR)
     const visorGeo = new THREE.BoxGeometry(0.5, 0.1, 0.3);
     const visor = new THREE.Mesh(visorGeo, glowMaterial);
     visor.position.set(0, 1.52, 0.32);
     armorGroup.add(visor);
 
-    // B. VAI GIÁP (SHOULDER PADS)
+    // B. VAI GIÁP
     const leftShoulder = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 1), wireMaterial);
     leftShoulder.position.set(-1.1, 0.8, 0);
     armorGroup.add(leftShoulder);
@@ -172,54 +211,95 @@
     rightShoulder.position.set(1.1, 0.8, 0);
     armorGroup.add(rightShoulder);
 
-    // C. NGỰC GIÁP (CHEST PLATE)
+    // C. NGỰC GIÁP & LÕI ARC REACTOR
     const chestGeo = new THREE.CylinderGeometry(0.95, 0.6, 1.2, 7, 2);
     const chest = new THREE.Mesh(chestGeo, wireMaterial);
     chest.position.y = 0.6;
     armorGroup.add(chest);
 
-    // D. LÕI ARC REACTOR RỰC SÁNG Ở NGỰC (ARC REACTOR)
     const arcGeo = new THREE.RingGeometry(0.12, 0.28, 16);
     const arcReactor = new THREE.Mesh(arcGeo, glowMaterial);
     arcReactor.position.set(0, 0.7, 0.58);
     armorGroup.add(arcReactor);
 
-    // E. THÂN BỤNG & HÔNG (WAIST)
+    // D. THÂN BỤNG
     const waistGeo = new THREE.CylinderGeometry(0.58, 0.45, 1.0, 6, 2);
     const waist = new THREE.Mesh(waistGeo, wireMaterial);
     waist.position.y = -0.4;
     armorGroup.add(waist);
 
-    // CỐ ĐỊNH VỊ TRÍ GÓC TRÁI MÀN HÌNH
+    // ĐẶT BỘ GIÁP Ở GÓC TRÁI MÀN HÌNH
     const baseOffsetX = -2.6;
     armorGroup.position.x = baseOffsetX;
     armorGroup.position.y = -0.2;
     scene.add(armorGroup);
 
-    // VÒNG TRÒN DỰNG NĂNG LƯỢNG HUD
+    // VÒNG TRÒN NĂNG LƯỢNG HUD
     const ringGeo = new THREE.RingGeometry(2.1, 2.15, 36);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
     const hudRing = new THREE.Mesh(ringGeo, ringMat);
     armorGroup.add(hudRing);
 
-    // 3. BIẾN THEO DÕI
+    // 3. NHẬN DIỆN GIỌNG NÓI (VOICE CONTROL: "CHÀO")
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let isPanelOpen = false;
+
+    if (window.SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'vi-VN'; // Nhận diện tiếng Việt
+
+      recognition.onresult = (event) => {
+        const lastIndex = event.results.length - 1;
+        const transcript = event.results[lastIndex][0].transcript.trim().toLowerCase();
+        voiceHud.innerText = `LAST HEARD: "${transcript}"`;
+
+        if (transcript.includes('chào') || transcript.includes('hello') || transcript.includes('jarvis')) {
+          isPanelOpen = !isPanelOpen;
+          if (isPanelOpen) {
+            controlPanel.classList.add('active');
+            speakText("Welcome back, Sir. Systems initialized.");
+          } else {
+            controlPanel.classList.remove('active');
+          }
+        }
+      };
+
+      recognition.onerror = () => {
+        voiceHud.innerText = "VOICE RECOGNITION ERROR";
+      };
+
+      recognition.start();
+    } else {
+      voiceHud.innerText = "VOICE CONTROL NOT SUPPORTED ON THIS BROWSER";
+    }
+
+    // PHÁT ÂM THUẬT NÓI CỦA JARVIS
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        const speech = new SpeechSynthesisUtterance(text);
+        speech.lang = 'en-US';
+        speech.rate = 1.0;
+        window.speechSynthesis.speak(speech);
+      }
+    }
+
+    // 4. MEDIAPIPE HAND TRACKING
     let targetX = baseOffsetX, targetY = -0.2;
     let handPinchScale = 1.0;
     let lastHandX = null;
-    let isPanelOpen = false;
 
-    // 4. MEDIAPIPE HAND TRACKING
     function onResults(results) {
       loadingElement.style.display = 'none';
       
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const lm = results.multiHandLandmarks[0];
         
-        // Di chuyển bộ giáp quanh vùng góc trái
         targetX = baseOffsetX + (0.5 - lm[9].x) * 3.5;
         targetY = (0.5 - lm[9].y) * 3.5;
 
-        // Phóng to / Thu nhỏ giáp bằng chụm 2 ngón tay
+        // Phóng to / thu nhỏ bằng chụm ngón tay
         const dx = lm[4].x - lm[8].x;
         const dy = lm[4].y - lm[8].y;
         const distPinch = Math.sqrt(dx * dx + dy * dy);
@@ -254,7 +334,7 @@
         }
 
         if (isPanelOpen) {
-          hudMode.innerText = "MODE: CONTROL PANEL ACTIVE";
+          hudMode.innerText = "MODE: JARVIS PANEL OPEN";
           hudMode.style.color = "#00ffcc";
         } else {
           hudMode.innerText = "MODE: HOLOGRAM TRACKING ACTIVE";
@@ -295,14 +375,11 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Bám theo vị trí tay mượt mà
       armorGroup.position.x += (targetX - armorGroup.position.x) * 0.18;
       armorGroup.position.y += (targetY - armorGroup.position.y) * 0.18;
-
-      // Áp dụng tỉ lệ phóng to / thu nhỏ
       armorGroup.scale.set(handPinchScale, handPinchScale, handPinchScale);
 
-      // BỘ GIÁP XOAY TRÒN SANG BÊN TRÁI LIÊN TỤC
+      // Xoay bộ giáp vòng tròn sang bên trái
       armorGroup.rotation.y -= 0.012; 
       hudRing.rotation.z += 0.01;
 
