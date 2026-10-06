@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hiệu Ứng Quả Cầu Hạt 3D - Hand Tracking</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #000;
+      font-family: Arial, sans-serif;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+    video {
+      transform: scaleX(-1);
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 160px;
+      height: 120px;
+      border-radius: 8px;
+      border: 2px solid #00ffcc;
+      z-index: 10;
+    }
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #00ffcc;
+      font-size: 20px;
+      z-index: 20;
+    }
+  </style>
+
+  <!-- Thư viện Three.js và MediaPipe -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <div id="loading">Đang tải Camera & Mô hình nhận diện...</div>
+  <video id="input-video" autoplay playsinline></video>
+  <div id="canvas-container"></div>
+
+  <script>
+    const videoElement = document.getElementById('input-video');
+    const loadingElement = document.getElementById('loading');
+    
+    // --- KHỞI TẠO THREE.JS SCENE ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    // --- TẠO HẠT QUẢ CẦU 3D ---
+    const particleCount = 2000;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const originalPositions = new Float32Array(particleCount * 3);
+
+    const radius = 1.8;
+    for (let i = 0; i < particleCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      originalPositions[i * 3] = x;
+      originalPositions[i * 3 + 1] = y;
+      originalPositions[i * 3 + 2] = z;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.PointsMaterial({
+      color: 0x00aaff,
+      size: 0.04,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+
+    const sphereParticles = new THREE.Points(geometry, material);
+    scene.add(sphereParticles);
+
+    // --- XỬ LÝ BÀN TAY BẰNG MEDIAPIPE ---
+    let handPinchScale = 1.0;
+
+    function onResults(results) {
+      loadingElement.style.display = 'none';
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        
+        // Đo khoảng cách ngón trỏ (8) và ngón cái (4)
+        const thumb = landmarks[4];
+        const index = landmarks[8];
+        const dist = Math.hypot(thumb.x - index.x, thumb.y - index.y, thumb.z - index.z);
+        
+        // Biến đổi khoảng cách thành tỉ lệ thu phóng quả cầu
+        handPinchScale = Math.max(0.3, Math.min(dist * 5.0, 2.5));
+      } else {
+        handPinchScale = 1.0;
+      }
+    }
+
+    const hands = new Hands({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+    hands.onResults(onResults);
+
+    const cameraUtils = new Camera(videoElement, {
+      onFrame: async () => {
+        await hands.send({ image: videoElement });
+      },
+      width: 640,
+      height: 480
+    });
+    cameraUtils.start();
+
+    // --- ANIMATION LOOP ---
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Xoay quả cầu
+      sphereParticles.rotation.y += 0.005;
+      sphereParticles.rotation.x += 0.002;
+
+      // Cập nhật vị trí hạt theo khoảng cách bóp tay
+      const posAttr = geometry.attributes.position;
+      for (let i = 0; i < particleCount; i++) {
+        posAttr.array[i * 3] = originalPositions[i * 3] * handPinchScale;
+        posAttr.array[i * 3 + 1] = originalPositions[i * 3 + 1] * handPinchScale;
+        posAttr.array[i * 3 + 2] = originalPositions[i * 3 + 2] * handPinchScale;
+      }
+      posAttr.needsUpdate = true;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Tự động căn chỉnh khi resize màn hình
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
