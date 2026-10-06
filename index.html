@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JARVIS - Iron Man Mark-85 HUD Interface</title>
+  <title>MAYA / JARVIS AI INTERFACE</title>
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
     body {
-      margin: 0;
       overflow: hidden;
       background-color: #020813;
-      font-family: 'Courier New', Courier, monospace;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #00f0ff;
       user-select: none;
     }
@@ -22,14 +23,15 @@
       position: absolute;
       top: 0;
       left: 0;
+      z-index: 1;
     }
     video {
       transform: scaleX(-1);
       position: absolute;
       top: 20px;
       right: 20px;
-      width: 140px;
-      height: 100px;
+      width: 130px;
+      height: 90px;
       border-radius: 8px;
       border: 1.5px solid #00f0ff;
       box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
@@ -37,32 +39,101 @@
       object-fit: cover;
     }
 
-    /* KHUNG GIAO DIỆN HUD */
-    .hud-overlay {
+    /* TIÊU ĐỀ MAYA AI CHÍNH GIỮA TRÊN CÙNG */
+    .top-header {
       position: absolute;
-      top: 20px;
-      left: 25px;
-      pointer-events: none;
+      top: 25px;
+      width: 100%;
+      text-align: center;
       z-index: 10;
-      text-shadow: 0 0 10px #00f0ff;
+      pointer-events: none;
     }
-    .hud-title {
-      font-size: 20px;
-      font-weight: bold;
-      letter-spacing: 3px;
+    .main-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #00f0ff;
+      text-shadow: 0 0 12px #00f0ff;
     }
-    .hud-status {
-      font-size: 12px;
-      color: #00ffcc;
-      margin-top: 6px;
-    }
-    .voice-status {
+    .sub-title {
       font-size: 11px;
-      color: #ffaa00;
+      color: #00ffcc;
+      letter-spacing: 2px;
       margin-top: 4px;
     }
 
-    /* BẢNG ĐIỀU KHIỂN JARVIS */
+    /* VÒNG TRÒN LÕI ARC REACTOR CHÍNH GIỮA (GIAO DIỆN MẶC ĐỊNH) */
+    .center-reactor {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      border: 3px solid #00f0ff;
+      box-shadow: 0 0 30px #00f0ff, inset 0 0 25px #00f0ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+      transition: all 0.8s ease;
+    }
+    .center-reactor-inner {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 2px dashed #00ffcc;
+      animation: spin 12s linear infinite;
+    }
+    .center-reactor-core {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 10%, #00f0ff 60%, rgba(0,240,255,0.1) 100%);
+      box-shadow: 0 0 25px #00f0ff;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Khi kích hoạt bằng tiếng "Chào" hoặc tay, Lõi tâm thu nhỏ và giáp hiện ra */
+    body.active-mode .center-reactor {
+      opacity: 0.3;
+      transform: translate(-50%, -50%) scale(0.7);
+    }
+
+    /* BẢNG WIDGET TRÁI & PHẢI TRÊN MÀN HÌNH BAN ĐẦU */
+    .widget-left {
+      position: absolute;
+      top: 120px;
+      left: 30px;
+      width: 220px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .widget-box {
+      background: rgba(2, 12, 27, 0.75);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-left: 3px solid #00f0ff;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      backdrop-filter: blur(4px);
+    }
+    .widget-title {
+      font-size: 11px;
+      font-weight: bold;
+      color: #00f0ff;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+    .widget-val {
+      font-size: 18px;
+      font-weight: bold;
+      color: #00ffcc;
+    }
+
+    /* BẢNG ĐIỀU KHIỂN TRƯỢT SANG TỪ BÊN PHẢI */
     #control-panel {
       position: absolute;
       bottom: 40px;
@@ -74,14 +145,14 @@
       box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
       border-radius: 10px;
       z-index: 30;
-      transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       backdrop-filter: blur(8px);
     }
     #control-panel.active {
       right: 30px;
     }
     .panel-header {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: bold;
       border-bottom: 1px solid #00f0ff;
       padding-bottom: 6px;
@@ -97,29 +168,13 @@
       justify-content: space-between;
     }
 
-    /* HIỆU ỨNG VÒNG TÂM NGẮM VÀ THƯỚC ĐO CÔNG NGHỆ */
-    .hud-crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 300px;
-      height: 300px;
-      border: 1px dashed rgba(0, 240, 255, 0.25);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 5;
-      animation: spin 20s linear infinite;
-    }
-    @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-
     #loading {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       color: #00f0ff;
-      font-size: 16px;
+      font-size: 15px;
       letter-spacing: 3px;
       text-shadow: 0 0 10px #00f0ff;
       z-index: 20;
@@ -132,24 +187,41 @@
 </head>
 <body>
 
-  <div id="loading">INITIALIZING J.A.R.V.I.S. SYSTEM...</div>
-  <div class="hud-crosshair"></div>
+  <div id="loading">CONNECTING TO MAYA AI INTERFACE...</div>
   
-  <div class="hud-overlay">
-    <div class="hud-title">MARK-85 HUD SYSTEM</div>
-    <div id="hud-mode" class="hud-status">WAITING FOR HAND / VOICE SIGNALS</div>
-    <div id="voice-hud" class="voice-status">VOICE COMMAND: SAY "CHÀO"</div>
+  <div class="top-header">
+    <div class="main-title">MAYA AI</div>
+    <div id="voice-hud" class="sub-title">SAY "CHÀO" TO ACTIVATE ARMOR</div>
   </div>
 
+  <!-- VÒNG TRÒN ARC REACTOR CHÍNH GIỮA BAN ĐẦU -->
+  <div class="center-reactor">
+    <div class="center-reactor-inner"></div>
+    <div class="center-reactor-core"></div>
+  </div>
+
+  <!-- THÔNG SỐ WIDGET BÊN TRÁI -->
+  <div class="widget-left">
+    <div class="widget-box">
+      <div class="widget-title">SYSTEM STATUS</div>
+      <div class="widget-val">ONLINE</div>
+    </div>
+    <div class="widget-box">
+      <div class="widget-title">VOICE SENSOR</div>
+      <div id="voice-state" class="widget-val" style="font-size:13px; color:#ffaa00;">LISTENING...</div>
+    </div>
+  </div>
+
+  <!-- BẢNG ĐIỀU KHIỂN BÊN PHẢI -->
   <div id="control-panel">
     <div class="panel-header">
-      <span>J.A.R.V.I.S DIAGNOSTICS</span>
-      <span style="color:#00ffcc;">ONLINE</span>
+      <span>MAYA SYSTEM CONTROL</span>
+      <span style="color:#00ffcc;">ACTIVE</span>
     </div>
-    <div class="panel-item"><span>ARMOR SYSTEM:</span><span style="color:#00ffcc;">MARK 85 DEPLOYED</span></div>
-    <div class="panel-item"><span>ARC REACTOR:</span><span style="color:#00ffcc;">100% (STABLE)</span></div>
-    <div class="panel-item"><span>VOICE CONTROL:</span><span style="color:#00f0ff;">LISTENING ("CHÀO")</span></div>
-    <div class="panel-item"><span>GESTURE SENSOR:</span><span style="color:#00f0ff;">HAND TRACKING ACTIVE</span></div>
+    <div class="panel-item"><span>ARMOR STATE:</span><span style="color:#00ffcc;">MARK 85 DEPLOYED</span></div>
+    <div class="panel-item"><span>ROTATION:</span><span style="color:#00ffcc;">LEFT CONTINUOUS</span></div>
+    <div class="panel-item"><span>VOICE COMMAND:</span><span style="color:#00f0ff;">"CHÀO" DETECTED</span></div>
+    <div class="panel-item"><span>GESTURE PANEL:</span><span style="color:#00f0ff;">SWIPE OPENED</span></div>
   </div>
 
   <video id="input-video" autoplay playsinline></video>
@@ -158,11 +230,11 @@
   <script>
     const videoElement = document.getElementById('input-video');
     const loadingElement = document.getElementById('loading');
-    const hudMode = document.getElementById('hud-mode');
     const voiceHud = document.getElementById('voice-hud');
+    const voiceState = document.getElementById('voice-state');
     const controlPanel = document.getElementById('control-panel');
     
-    // 1. THREE.JS SCENE SETUP
+    // 1. SCENE THREE.JS
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 6.0;
@@ -172,23 +244,24 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-    // 2. DỰNG TẠO HÌNH BỘ GIÁP IRON MAN MARK-85 HOLOGRAM 3D
+    // 2. TẠO MÔ HÌNH BỘ GIÁP 3D HOLOGRAM (BAN ĐẦU ẨN, CHỈ HIỆN KHI KÍCH HOẠT)
     const armorGroup = new THREE.Group();
+    armorGroup.visible = false; // Ban dau an theo giao dien video
 
     const wireMaterial = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.65
+      opacity: 0.7
     });
 
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: 0x00ffff,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.95
     });
 
-    // A. MŨ BẢO HIỂM (HELMET)
+    // Mũ bảo hiểm
     const helmetGeo = new THREE.ConeGeometry(0.55, 0.9, 8, 4);
     helmetGeo.rotateX(Math.PI);
     const helmet = new THREE.Mesh(helmetGeo, wireMaterial);
@@ -196,13 +269,13 @@
     helmet.scale.set(1, 1.1, 0.85);
     armorGroup.add(helmet);
 
-    // MẮT SÁNG (VISOR)
+    // Visor mắt sáng
     const visorGeo = new THREE.BoxGeometry(0.5, 0.1, 0.3);
     const visor = new THREE.Mesh(visorGeo, glowMaterial);
     visor.position.set(0, 1.52, 0.32);
     armorGroup.add(visor);
 
-    // B. VAI GIÁP
+    // Vai & Thân ngực
     const leftShoulder = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 1), wireMaterial);
     leftShoulder.position.set(-1.1, 0.8, 0);
     armorGroup.add(leftShoulder);
@@ -211,7 +284,6 @@
     rightShoulder.position.set(1.1, 0.8, 0);
     armorGroup.add(rightShoulder);
 
-    // C. NGỰC GIÁP & LÕI ARC REACTOR
     const chestGeo = new THREE.CylinderGeometry(0.95, 0.6, 1.2, 7, 2);
     const chest = new THREE.Mesh(chestGeo, wireMaterial);
     chest.position.y = 0.6;
@@ -222,70 +294,67 @@
     arcReactor.position.set(0, 0.7, 0.58);
     armorGroup.add(arcReactor);
 
-    // D. THÂN BỤNG
     const waistGeo = new THREE.CylinderGeometry(0.58, 0.45, 1.0, 6, 2);
     const waist = new THREE.Mesh(waistGeo, wireMaterial);
     waist.position.y = -0.4;
     armorGroup.add(waist);
 
-    // ĐẶT BỘ GIÁP Ở GÓC TRÁI MÀN HÌNH
+    // Đặt bộ giáp ở góc trái màn hình
     const baseOffsetX = -2.6;
     armorGroup.position.x = baseOffsetX;
     armorGroup.position.y = -0.2;
     scene.add(armorGroup);
 
-    // VÒNG TRÒN NĂNG LƯỢNG HUD
-    const ringGeo = new THREE.RingGeometry(2.1, 2.15, 36);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
-    const hudRing = new THREE.Mesh(ringGeo, ringMat);
-    armorGroup.add(hudRing);
-
-    // 3. NHẬN DIỆN GIỌNG NÓI (VOICE CONTROL: "CHÀO")
-    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    // 3. ĐIỀU KHIỂN BẰNG GIỌNG NÓI "CHÀO"
+    let isActivated = false;
     let isPanelOpen = false;
+
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (window.SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = false;
-      recognition.lang = 'vi-VN'; // Nhận diện tiếng Việt
+      recognition.lang = 'vi-VN';
 
       recognition.onresult = (event) => {
         const lastIndex = event.results.length - 1;
         const transcript = event.results[lastIndex][0].transcript.trim().toLowerCase();
-        voiceHud.innerText = `LAST HEARD: "${transcript}"`;
+        voiceState.innerText = `HEARD: "${transcript}"`;
 
-        if (transcript.includes('chào') || transcript.includes('hello') || transcript.includes('jarvis')) {
-          isPanelOpen = !isPanelOpen;
-          if (isPanelOpen) {
-            controlPanel.classList.add('active');
-            speakText("Welcome back, Sir. Systems initialized.");
-          } else {
-            controlPanel.classList.remove('active');
-          }
+        if (transcript.includes('chào') || transcript.includes('hello') || transcript.includes('maya')) {
+          activateArmorSystem();
         }
       };
 
       recognition.onerror = () => {
-        voiceHud.innerText = "VOICE RECOGNITION ERROR";
+        voiceState.innerText = "MIC READY";
       };
 
       recognition.start();
     } else {
-      voiceHud.innerText = "VOICE CONTROL NOT SUPPORTED ON THIS BROWSER";
+      voiceState.innerText = "NO VOICE SUPP";
     }
 
-    // PHÁT ÂM THUẬT NÓI CỦA JARVIS
-    function speakText(text) {
+    function activateArmorSystem() {
+      isActivated = true;
+      armorGroup.visible = true; // Hiện giáp ở góc trái
+      isPanelOpen = true;
+      controlPanel.classList.add('active'); // Trượt bảng điều khiển bên phải ra
+      document.body.classList.add('active-mode');
+      voiceHud.innerText = "SYSTEM ACTIVATED - MAYA ONLINE";
+      speakJARVIS("Welcome back, Sir. Armor deployed.");
+    }
+
+    function speakJARVIS(text) {
       if ('speechSynthesis' in window) {
         const speech = new SpeechSynthesisUtterance(text);
         speech.lang = 'en-US';
-        speech.rate = 1.0;
         window.speechSynthesis.speak(speech);
       }
     }
 
-    // 4. MEDIAPIPE HAND TRACKING
+    // 4. MEDIAPIPE HAND TRACKING & VUỐT XÒE TAY
     let targetX = baseOffsetX, targetY = -0.2;
     let handPinchScale = 1.0;
     let lastHandX = null;
@@ -299,13 +368,13 @@
         targetX = baseOffsetX + (0.5 - lm[9].x) * 3.5;
         targetY = (0.5 - lm[9].y) * 3.5;
 
-        // Phóng to / thu nhỏ bằng chụm ngón tay
+        // Chụm 2 ngón tay thu phóng giáp
         const dx = lm[4].x - lm[8].x;
         const dy = lm[4].y - lm[8].y;
         const distPinch = Math.sqrt(dx * dx + dy * dy);
         handPinchScale = Math.max(0.5, Math.min(distPinch * 4.5, 2.2));
 
-        // Kiểm tra Xòe 5 ngón tay
+        // Kiểm tra xòe 5 ngón tay
         const tips = [4, 8, 12, 16, 20];
         let openFingers = 0;
         for (let i = 0; i < tips.length; i++) {
@@ -315,9 +384,11 @@
         }
         const isOpenHand = (openFingers === 5);
 
-        // Vuốt xòe tay Trái -> Phải để mở Panel
+        // Vuốt xòe tay Trái -> Phải để bật/tắt Bảng điều khiển
         const currentHandX = lm[9].x;
         if (isOpenHand) {
+          if (!isActivated) activateArmorSystem(); // Xòe tay cũng giúp kích hoạt hệ thống
+
           if (lastHandX !== null) {
             const deltaX = currentHandX - lastHandX;
             if (deltaX < -0.04) {
@@ -333,19 +404,9 @@
           lastHandX = null;
         }
 
-        if (isPanelOpen) {
-          hudMode.innerText = "MODE: JARVIS PANEL OPEN";
-          hudMode.style.color = "#00ffcc";
-        } else {
-          hudMode.innerText = "MODE: HOLOGRAM TRACKING ACTIVE";
-          hudMode.style.color = "#00f0ff";
-        }
-
       } else {
         handPinchScale = 1.0;
         lastHandX = null;
-        hudMode.innerText = "SEARCHING FOR HAND SIGNALS...";
-        hudMode.style.color = "#ffaa00";
       }
     }
 
@@ -375,13 +436,14 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      armorGroup.position.x += (targetX - armorGroup.position.x) * 0.18;
-      armorGroup.position.y += (targetY - armorGroup.position.y) * 0.18;
-      armorGroup.scale.set(handPinchScale, handPinchScale, handPinchScale);
+      if (armorGroup.visible) {
+        armorGroup.position.x += (targetX - armorGroup.position.x) * 0.18;
+        armorGroup.position.y += (targetY - armorGroup.position.y) * 0.18;
+        armorGroup.scale.set(handPinchScale, handPinchScale, handPinchScale);
 
-      // Xoay bộ giáp vòng tròn sang bên trái
-      armorGroup.rotation.y -= 0.012; 
-      hudRing.rotation.z += 0.01;
+        // Xoay bộ giáp vòng tròn sang bên trái liên tục
+        armorGroup.rotation.y -= 0.012; 
+      }
 
       renderer.render(scene, camera);
     }
