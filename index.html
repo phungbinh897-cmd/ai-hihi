@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quả Cầu 3D Siêu Mượt</title>
+  <title>JARVIS - Iron Man Armor Hologram System</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      background-color: #000;
-      font-family: Arial, sans-serif;
+      background-color: #020813;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00f0ff;
     }
     #canvas-container {
       width: 100vw;
@@ -18,21 +19,44 @@
     video {
       transform: scaleX(-1);
       position: absolute;
-      top: 10px;
-      left: 10px;
-      width: 120px;
-      height: 90px;
-      border-radius: 6px;
-      border: 1.5px solid #00ffcc;
+      top: 15px;
+      left: 15px;
+      width: 130px;
+      height: 95px;
+      border-radius: 8px;
+      border: 1.5px solid #00f0ff;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
       z-index: 10;
+    }
+    /* HUD Iron Man Overlay */
+    .hud-overlay {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      text-align: right;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 8px #00f0ff;
+    }
+    .hud-title {
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .hud-status {
+      font-size: 12px;
+      color: #ff3300;
+      margin-top: 5px;
     }
     #loading {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      color: #00ffcc;
-      font-size: 16px;
+      color: #00f0ff;
+      font-size: 18px;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px #00f0ff;
       z-index: 20;
     }
   </style>
@@ -43,41 +67,51 @@
 </head>
 <body>
 
-  <div id="loading">Đang tối ưu mô hình AI...</div>
+  <div id="loading">INITIALIZING JARVIS HOLOGRAM...</div>
+  
+  <div class="hud-overlay">
+    <div class="hud-title">MARK-85 HOLO-INTERFACE</div>
+    <div id="hud-mode" class="hud-status">SYSTEM READY - WAITING FOR HAND TRACKING</div>
+  </div>
+
   <video id="input-video" autoplay playsinline></video>
   <div id="canvas-container"></div>
 
   <script>
     const videoElement = document.getElementById('input-video');
     const loadingElement = document.getElementById('loading');
+    const hudMode = document.getElementById('hud-mode');
     
-    // 1. THREE.JS TỐI ƯU
+    // 1. SCENE THREE.JS
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 6;
+    camera.position.z = 6.5;
 
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-    // 2. GIẢM SỐ LƯỢNG HẠT ĐỂ MƯỢT HƠN (1200 hạt)
-    const particleCount = 1200;
+    // 2. TẠO HOLOGRAM BỘ GIÁP / LÕI ARC REACTOR (1600 HẠT)
+    const particleCount = 1600;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const originalPositions = new Float32Array(particleCount * 3);
     const dirs = new Float32Array(particleCount * 3);
 
-    const radius = 1.5;
+    // Tạo cấu trúc đa tầng (Lõi Arc + Lớp giáp bên ngoài)
     for (let i = 0; i < particleCount; i++) {
+      let r = 1.6;
+      if (i < 300) r = 0.5; // Lõi Arc Reactor bên trong
+      
       const u = Math.random();
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
 
-      const x = radius * Math.sin(phi) * Math.cos(theta);
-      const y = radius * Math.sin(phi) * Math.sin(theta);
-      const z = radius * Math.cos(phi);
+      const x = r * Math.sin(phi) * Math.cos(theta);
+      const y = r * Math.sin(phi) * Math.sin(theta);
+      const z = r * Math.cos(phi);
 
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
@@ -88,45 +122,54 @@
       originalPositions[i * 3 + 2] = z;
 
       const len = Math.sqrt(x * x + y * y + z * z);
-      dirs[i * 3] = (x / len) * (0.8 + Math.random() * 1.2);
-      dirs[i * 3 + 1] = (y / len) * (0.8 + Math.random() * 1.2);
-      dirs[i * 3 + 2] = (z / len) * (0.8 + Math.random() * 1.2);
+      dirs[i * 3] = (x / len) * (1.2 + Math.random() * 1.5);
+      dirs[i * 3 + 1] = (y / len) * (1.2 + Math.random() * 1.5);
+      dirs[i * 3 + 2] = (z / len) * (1.2 + Math.random() * 1.5);
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
     const material = new THREE.PointsMaterial({
-      color: 0x00ffff,
-      size: 0.05,
+      color: 0x00f0ff,
+      size: 0.048,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.85,
       blending: THREE.AdditiveBlending
     });
 
-    const sphereParticles = new THREE.Points(geometry, material);
-    scene.add(sphereParticles);
+    const armorHologram = new THREE.Points(geometry, material);
+    scene.add(armorHologram);
 
-    // 3. BIẾN TRẠNG THÁI
+    // VÒNG TRÒN HUD XOAY XUNG QUANH (Phong cách Iron Man)
+    const ringGeo = new THREE.RingGeometry(2.2, 2.25, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+    const hudRing = new THREE.Mesh(ringGeo, ringMat);
+    armorHologram.add(hudRing);
+
+    // 3. BIẾN ĐIỀU KHIỂN
     let targetX = 0, targetY = 0;
     let handPinchScale = 1.0;
     let isFist = false;
     let explodeProgress = 0;
 
-    // 4. MEDIAPIPE LITE (BẢN NHẸ CHO WEB)
+    // 4. MEDIAPIPE LITE HANDS
     function onResults(results) {
       loadingElement.style.display = 'none';
       
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const lm = results.multiHandLandmarks[0];
         
-        targetX = (0.5 - lm[9].x) * 7;
-        targetY = (0.5 - lm[9].y) * 5;
+        // Di chuyển
+        targetX = (0.5 - lm[9].x) * 7.5;
+        targetY = (0.5 - lm[9].y) * 5.5;
 
+        // Phóng to / Thu nhỏ
         const dx = lm[4].x - lm[8].x;
         const dy = lm[4].y - lm[8].y;
         const distPinch = Math.sqrt(dx * dx + dy * dy);
         handPinchScale = Math.max(0.4, Math.min(distPinch * 5, 2.5));
 
+        // Nắm đấm (Nổ giáp)
         let totalDist = 0;
         const tips = [8, 12, 16, 20];
         for (let i = 0; i < tips.length; i++) {
@@ -135,9 +178,20 @@
           totalDist += Math.sqrt(tx * tx + ty * ty);
         }
         isFist = (totalDist / tips.length) < 0.28;
+
+        if (isFist) {
+          hudMode.innerText = "MODE: ARMOR DISASSEMBLY (EXPLODE)";
+          hudMode.style.color = "#ff3300";
+        } else {
+          hudMode.innerText = "MODE: HOLOGRAM TRACKING ACTIVE";
+          hudMode.style.color = "#00ffcc";
+        }
+
       } else {
         handPinchScale = 1.0;
         isFist = false;
+        hudMode.innerText = "SEARCHING FOR HAND SIGNALS...";
+        hudMode.style.color = "#ffaa00";
       }
     }
 
@@ -145,17 +199,15 @@
       locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
     });
     
-    // modelComplexity: 0 -> Bản siêu nhẹ
     hands.setOptions({
       maxNumHands: 1,
-      modelComplexity: 0,
+      modelComplexity: 0, // Lite mode siêu mượt
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5
     });
     
     hands.onResults(onResults);
 
-    // Hạ độ phân giải xuống 320x240 để giảm độ trễ
     const cameraUtils = new Camera(videoElement, {
       onFrame: async () => {
         await hands.send({ image: videoElement });
@@ -165,18 +217,21 @@
     });
     cameraUtils.start();
 
-    // 5. ANIMATION LOOP TĂNG TỐC ĐỘ PHẢN HỒI
+    // 5. ANIMATION LOOP
     function animate() {
       requestAnimationFrame(animate);
 
-      // Tăng hệ số nội suy (0.25) để quả cầu phản hồi chuyển động tay nhanh hơn
-      sphereParticles.position.x += (targetX - sphereParticles.position.x) * 0.25;
-      sphereParticles.position.y += (targetY - sphereParticles.position.y) * 0.25;
+      // Quả cầu đuổi theo tay
+      armorHologram.position.x += (targetX - armorHologram.position.x) * 0.22;
+      armorHologram.position.y += (targetY - armorHologram.position.y) * 0.22;
 
-      sphereParticles.rotation.y += 0.005;
+      // Xoay Mô hình & Vòng HUD
+      armorHologram.rotation.y += 0.008;
+      hudRing.rotation.z -= 0.015;
 
+      // Hiệu ứng nổ mảnh giáp
       if (isFist) {
-        if (explodeProgress < 1.0) explodeProgress += 0.1;
+        if (explodeProgress < 1.0) explodeProgress += 0.12;
       } else {
         if (explodeProgress > 0.0) explodeProgress -= 0.08;
       }
@@ -187,9 +242,9 @@
         const by = originalPositions[i * 3 + 1] * handPinchScale;
         const bz = originalPositions[i * 3 + 2] * handPinchScale;
 
-        const ex = dirs[i * 3] * explodeProgress * 4;
-        const ey = dirs[i * 3 + 1] * explodeProgress * 4;
-        const ez = dirs[i * 3 + 2] * explodeProgress * 4;
+        const ex = dirs[i * 3] * explodeProgress * 3.5;
+        const ey = dirs[i * 3 + 1] * explodeProgress * 3.5;
+        const ez = dirs[i * 3 + 2] * explodeProgress * 3.5;
 
         pos[i * 3] = bx + ex;
         pos[i * 3 + 1] = by + ey;
@@ -197,10 +252,13 @@
       }
       geometry.attributes.position.needsUpdate = true;
 
+      // Đổi màu khi nổ sang Đỏ Vàng Iron Man
       if (explodeProgress > 0.2) {
         material.color.setHex(0xff2200);
+        ringMat.color.setHex(0xffaa00);
       } else {
-        material.color.setHex(0x00ffff);
+        material.color.setHex(0x00f0ff);
+        ringMat.color.setHex(0x00f0ff);
       }
 
       renderer.render(scene, camera);
