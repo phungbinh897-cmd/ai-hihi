@@ -20,7 +20,7 @@
       transform: scaleX(-1);
       position: absolute;
       top: 15px;
-      right: 15px; /* Chuyen Camera sang goc phai de nhuong goc trai cho giap */
+      right: 15px;
       width: 130px;
       height: 95px;
       border-radius: 8px;
@@ -32,7 +32,6 @@
       position: absolute;
       top: 15px;
       left: 20px;
-      text-align: left;
       pointer-events: none;
       z-index: 10;
       text-shadow: 0 0 8px #00f0ff;
@@ -48,14 +47,14 @@
       margin-top: 5px;
     }
 
-    /* BẢNG ĐIỀU KHIỂN JARVIS PANEL */
+    /* BẢNG ĐIỀU KHIỂN JARVIS */
     #control-panel {
       position: absolute;
       bottom: 30px;
-      right: -350px; /* An sang ben phai màn hinh */
+      right: -350px;
       width: 280px;
       padding: 18px;
-      background: rgba(2, 12, 27, 0.88);
+      background: rgba(2, 12, 27, 0.9);
       border: 1.5px solid #00f0ff;
       box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
       border-radius: 8px;
@@ -99,19 +98,19 @@
 </head>
 <body>
 
-  <div id="loading">CONSTRUCTING MARK-85 HOLO-ARMOR...</div>
+  <div id="loading">INITIALIZING MARK-85 HOLOGRAM...</div>
   
   <div class="hud-overlay">
-    <div class="hud-title">MARK-85 ARMOR DISPLAY</div>
-    <div id="hud-mode" class="hud-status">WAITING FOR HAND TRACKING</div>
+    <div class="hud-title">MARK-85 ARMOR HUD</div>
+    <div id="hud-mode" class="hud-status">WAITING FOR HAND SIGNALS</div>
   </div>
 
   <div id="control-panel">
-    <div class="panel-header">JARVIS CONTROL INTERFACE</div>
-    <div class="panel-item"><span>ARMOR MODEL:</span><span style="color:#00ffcc;">MARK 85</span></div>
-    <div class="panel-item"><span>ARC REACTOR:</span><span style="color:#00ffcc;">STABLE (100%)</span></div>
-    <div class="panel-item"><span>NANO MATRIX:</span><span style="color:#00ffcc;">ACTIVE</span></div>
-    <div class="panel-item"><span>STATUS:</span><span style="color:#00f0ff;">CONNECTED</span></div>
+    <div class="panel-header">JARVIS CONTROL PANEL</div>
+    <div class="panel-item"><span>ARMOR MODEL:</span><span style="color:#00ffcc;">MARK 85 (HD)</span></div>
+    <div class="panel-item"><span>ARC REACTOR:</span><span style="color:#00ffcc;">ONLINE (100%)</span></div>
+    <div class="panel-item"><span>INTEGRITY:</span><span style="color:#00ffcc;">100% STABLE</span></div>
+    <div class="panel-item"><span>GESTURE:</span><span style="color:#00f0ff;">SWIPE TOGGLE</span></div>
   </div>
 
   <video id="input-video" autoplay playsinline></video>
@@ -123,101 +122,89 @@
     const hudMode = document.getElementById('hud-mode');
     const controlPanel = document.getElementById('control-panel');
     
-    // 1. THREE.JS SETUP
+    // 1. THREE.JS SCENE SETUP
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 6.0;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-    // 2. DỰNG TẠO HÌNH BỘ GIÁP IRON MAN BẰNG HẠT 3D (POINT-CLOUD ARMOR)
-    const particleCount = 3000;
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const originalPositions = new Float32Array(particleCount * 3);
-    const dirs = new Float32Array(particleCount * 3);
+    // 2. DỰNG MÔ HÌNH BỘ GIÁP NÉT ĐẸP (GEOMETRIC HOLOGRAM MESH)
+    const armorGroup = new THREE.Group();
 
-    for (let i = 0; i < particleCount; i++) {
-      let x = 0, y = 0, z = 0;
-      const part = Math.random();
-
-      if (part < 0.20) { 
-        // A. MŨ BẢO HIỂM IRON MAN (HELMET)
-        const u = Math.random() * Math.PI * 2;
-        const v = Math.random() * Math.PI;
-        x = 0.5 * Math.sin(v) * Math.cos(u);
-        y = 1.6 + 0.55 * Math.cos(v);
-        z = 0.5 * Math.sin(v) * Math.sin(u) * 0.85; // Mặt thon hơn
-      } else if (part < 0.60) { 
-        // B. THÂN & NGỰC GIÁP (CHEST & ARC REACTOR)
-        const u = Math.random() * Math.PI * 2;
-        const h = (Math.random() - 0.5) * 1.8;
-        const rad = (1.1 - Math.abs(h) * 0.35) * (1 + 0.1 * Math.cos(u * 3));
-        x = rad * Math.cos(u);
-        y = h + 0.2;
-        z = rad * Math.sin(u) * 0.7;
-      } else if (part < 0.85) { 
-        // C. VAI VÀ BẮP TAY (SHOULDERS & ARMS)
-        const side = Math.random() > 0.5 ? 1 : -1;
-        const armH = (Math.random() - 0.5) * 1.6;
-        x = side * (1.2 + Math.random() * 0.45);
-        y = armH + 0.3;
-        z = (Math.random() - 0.5) * 0.6;
-      } else { 
-        // D. LÕI ARC REACTOR RỰC SÁNG Ở NGỰC (CENTRAL CORE)
-        const rad = Math.random() * 0.35;
-        const ang = Math.random() * Math.PI * 2;
-        x = rad * Math.cos(ang);
-        y = 0.5 + rad * Math.sin(ang);
-        z = 0.45; // Nổi nhẹ ra phía trước ngực
-      }
-
-      positions[i * 3] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-
-      originalPositions[i * 3] = x;
-      originalPositions[i * 3 + 1] = y;
-      originalPositions[i * 3 + 2] = z;
-
-      const len = Math.sqrt(x * x + y * y + z * z) || 1;
-      dirs[i * 3] = (x / len) * (1.2 + Math.random() * 1.5);
-      dirs[i * 3 + 1] = (y / len) * (1.2 + Math.random() * 1.5);
-      dirs[i * 3 + 2] = (z / len) * (1.2 + Math.random() * 1.5);
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    const material = new THREE.PointsMaterial({
+    // Vật liệu Hologram sắc nét
+    const wireMaterial = new THREE.MeshBasicMaterial({
       color: 0x00f0ff,
-      size: 0.042,
+      wireframe: true,
       transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending
+      opacity: 0.6
     });
 
-    const ironmanArmor = new THREE.Points(geometry, material);
-    
-    // ĐẶT BỘ GIÁP Ở CỐ ĐỊNH GÓC TRÁI MÀN HÌNH
-    const baseOffsetX = -2.8; 
-    ironmanArmor.position.x = baseOffsetX;
-    ironmanArmor.position.y = -0.2;
-    scene.add(ironmanArmor);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00ffff,
+      transparent: true,
+      opacity: 0.85
+    });
 
-    // VÒNG TRÒN HUD NĂNG LƯỢNG SANG TRỌNG
-    const ringGeo = new THREE.RingGeometry(2.2, 2.25, 32);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
+    // A. MŨ BẢO HIỂM IRON MAN (HELMET)
+    const helmetGeo = new THREE.ConeGeometry(0.55, 0.9, 8, 4);
+    helmetGeo.rotateX(Math.PI);
+    const helmet = new THREE.Mesh(helmetGeo, wireMaterial);
+    helmet.position.y = 1.55;
+    helmet.scale.set(1, 1.1, 0.85);
+    armorGroup.add(helmet);
+
+    // KÍNH MẮT RỰC SÁNG (VISOR)
+    const visorGeo = new THREE.BoxGeometry(0.5, 0.1, 0.3);
+    const visor = new THREE.Mesh(visorGeo, glowMaterial);
+    visor.position.set(0, 1.52, 0.32);
+    armorGroup.add(visor);
+
+    // B. VAI GIÁP (SHOULDER PADS)
+    const leftShoulder = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 1), wireMaterial);
+    leftShoulder.position.set(-1.1, 0.8, 0);
+    armorGroup.add(leftShoulder);
+
+    const rightShoulder = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 1), wireMaterial);
+    rightShoulder.position.set(1.1, 0.8, 0);
+    armorGroup.add(rightShoulder);
+
+    // C. NGỰC GIÁP (CHEST PLATE)
+    const chestGeo = new THREE.CylinderGeometry(0.95, 0.6, 1.2, 7, 2);
+    const chest = new THREE.Mesh(chestGeo, wireMaterial);
+    chest.position.y = 0.6;
+    armorGroup.add(chest);
+
+    // D. LÕI ARC REACTOR RỰC SÁNG Ở NGỰC (ARC REACTOR)
+    const arcGeo = new THREE.RingGeometry(0.12, 0.28, 16);
+    const arcReactor = new THREE.Mesh(arcGeo, glowMaterial);
+    arcReactor.position.set(0, 0.7, 0.58);
+    armorGroup.add(arcReactor);
+
+    // E. THÂN BỤNG & HÔNG (WAIST)
+    const waistGeo = new THREE.CylinderGeometry(0.58, 0.45, 1.0, 6, 2);
+    const waist = new THREE.Mesh(waistGeo, wireMaterial);
+    waist.position.y = -0.4;
+    armorGroup.add(waist);
+
+    // CỐ ĐỊNH VỊ TRÍ GÓC TRÁI MÀN HÌNH
+    const baseOffsetX = -2.6;
+    armorGroup.position.x = baseOffsetX;
+    armorGroup.position.y = -0.2;
+    scene.add(armorGroup);
+
+    // VÒNG TRÒN DỰNG NĂNG LƯỢNG HUD
+    const ringGeo = new THREE.RingGeometry(2.1, 2.15, 36);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
     const hudRing = new THREE.Mesh(ringGeo, ringMat);
-    ironmanArmor.add(hudRing);
+    armorGroup.add(hudRing);
 
-    // 3. BIẾN ĐIỀU KHIỂN & TRẠNG THÁI
+    // 3. BIẾN THEO DÕI
     let targetX = baseOffsetX, targetY = -0.2;
     let handPinchScale = 1.0;
-    let isFist = false;
-    let explodeProgress = 0;
     let lastHandX = null;
     let isPanelOpen = false;
 
@@ -229,14 +216,14 @@
         const lm = results.multiHandLandmarks[0];
         
         // Di chuyển bộ giáp quanh vùng góc trái
-        targetX = baseOffsetX + (0.5 - lm[9].x) * 4.0;
-        targetY = (0.5 - lm[9].y) * 4.0;
+        targetX = baseOffsetX + (0.5 - lm[9].x) * 3.5;
+        targetY = (0.5 - lm[9].y) * 3.5;
 
-        // Phóng to / Thu nhỏ giáp
+        // Phóng to / Thu nhỏ giáp bằng chụm 2 ngón tay
         const dx = lm[4].x - lm[8].x;
         const dy = lm[4].y - lm[8].y;
         const distPinch = Math.sqrt(dx * dx + dy * dy);
-        handPinchScale = Math.max(0.4, Math.min(distPinch * 5, 2.3));
+        handPinchScale = Math.max(0.5, Math.min(distPinch * 4.5, 2.2));
 
         // Kiểm tra Xòe 5 ngón tay
         const tips = [4, 8, 12, 16, 20];
@@ -247,9 +234,8 @@
           if (Math.sqrt(tx * tx + ty * ty) > 0.33) openFingers++;
         }
         const isOpenHand = (openFingers === 5);
-        isFist = (openFingers <= 1);
 
-        // Vuốt xòe tay từ Trái sang Phải để mở Panel
+        // Vuốt xòe tay Trái -> Phải để mở Panel
         const currentHandX = lm[9].x;
         if (isOpenHand) {
           if (lastHandX !== null) {
@@ -267,10 +253,7 @@
           lastHandX = null;
         }
 
-        if (isFist) {
-          hudMode.innerText = "MODE: ARMOR DISASSEMBLY";
-          hudMode.style.color = "#ff3300";
-        } else if (isPanelOpen) {
+        if (isPanelOpen) {
           hudMode.innerText = "MODE: CONTROL PANEL ACTIVE";
           hudMode.style.color = "#00ffcc";
         } else {
@@ -280,7 +263,6 @@
 
       } else {
         handPinchScale = 1.0;
-        isFist = false;
         lastHandX = null;
         hudMode.innerText = "SEARCHING FOR HAND SIGNALS...";
         hudMode.style.color = "#ffaa00";
@@ -313,41 +295,16 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      ironmanArmor.position.x += (targetX - ironmanArmor.position.x) * 0.2;
-      ironmanArmor.position.y += (targetY - ironmanArmor.position.y) * 0.2;
+      // Bám theo vị trí tay mượt mà
+      armorGroup.position.x += (targetX - armorGroup.position.x) * 0.18;
+      armorGroup.position.y += (targetY - armorGroup.position.y) * 0.18;
 
-      // Xoay bộ giáp quay vòng sang bên trái
-      ironmanArmor.rotation.y -= 0.012; 
+      // Áp dụng tỉ lệ phóng to / thu nhỏ
+      armorGroup.scale.set(handPinchScale, handPinchScale, handPinchScale);
+
+      // BỘ GIÁP XOAY TRÒN SANG BÊN TRÁI LIÊN TỤC
+      armorGroup.rotation.y -= 0.012; 
       hudRing.rotation.z += 0.01;
-
-      // Nổ giáp
-      if (isFist) {
-        if (explodeProgress < 1.0) explodeProgress += 0.12;
-      } else {
-        if (explodeProgress > 0.0) explodeProgress -= 0.08;
-      }
-
-      const pos = geometry.attributes.position.array;
-      for (let i = 0; i < particleCount; i++) {
-        const bx = originalPositions[i * 3] * handPinchScale;
-        const by = originalPositions[i * 3 + 1] * handPinchScale;
-        const bz = originalPositions[i * 3 + 2] * handPinchScale;
-
-        const ex = dirs[i * 3] * explodeProgress * 3.5;
-        const ey = dirs[i * 3 + 1] * explodeProgress * 3.5;
-        const ez = dirs[i * 3 + 2] * explodeProgress * 3.5;
-
-        pos[i * 3] = bx + ex;
-        pos[i * 3 + 1] = by + ey;
-        pos[i * 3 + 2] = bz + ez;
-      }
-      geometry.attributes.position.needsUpdate = true;
-
-      if (explodeProgress > 0.2) {
-        material.color.setHex(0xff2200);
-      } else {
-        material.color.setHex(0x00f0ff);
-      }
 
       renderer.render(scene, camera);
     }
