@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JARVIS - Iron Man Armor Hologram System</title>
+  <title>JARVIS - Iron Man Hologram System</title>
   <style>
     body {
       margin: 0;
@@ -28,7 +28,6 @@
       box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
       z-index: 10;
     }
-    /* HUD Iron Man Overlay */
     .hud-overlay {
       position: absolute;
       top: 15px;
@@ -45,8 +44,41 @@
     }
     .hud-status {
       font-size: 12px;
-      color: #ff3300;
+      color: #00ffcc;
       margin-top: 5px;
+    }
+
+    /* BẢNG ĐIỀU KHIỂN JARVIS (CONTROL PANEL) */
+    #control-panel {
+      position: absolute;
+      bottom: 30px;
+      left: -350px; /* An di ra ngoai man hinh */
+      width: 300px;
+      padding: 20px;
+      background: rgba(2, 12, 27, 0.85);
+      border: 2px solid #00f0ff;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+      border-radius: 10px;
+      z-index: 30;
+      transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      backdrop-filter: blur(5px);
+    }
+    #control-panel.active {
+      left: 30px; /* Truot ra khi xoe 5 ngon vuot sang phai */
+    }
+    .panel-header {
+      font-size: 16px;
+      font-weight: bold;
+      border-bottom: 1px solid #00f0ff;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+      color: #00f0ff;
+    }
+    .panel-item {
+      font-size: 12px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
     }
     #loading {
       position: absolute;
@@ -67,11 +99,21 @@
 </head>
 <body>
 
-  <div id="loading">INITIALIZING JARVIS HOLOGRAM...</div>
+  <div id="loading">INITIALIZING MARK-85 HOLO SYSTEM...</div>
   
   <div class="hud-overlay">
-    <div class="hud-title">MARK-85 HOLO-INTERFACE</div>
-    <div id="hud-mode" class="hud-status">SYSTEM READY - WAITING FOR HAND TRACKING</div>
+    <div class="hud-title">MARK-85 ARMOR HUD</div>
+    <div id="hud-mode" class="hud-status">WAITING FOR HAND SIGNALS</div>
+  </div>
+
+  <!-- BẢNG ĐIỀU KHIỂN CÓ THỂ MỞ BẰNG NÚT VUỐT XÒE TAY -->
+  <div id="control-panel">
+    <div class="panel-header">SYSTEM DIAGNOSTICS</div>
+    <div class="panel-item"><span>ARMOR STATUS:</span><span style="color:#00ffcc;">ONLINE</span></div>
+    <div class="panel-item"><span>POWER CORE:</span><span style="color:#00ffcc;">100% (ARC REACTOR)</span></div>
+    <div class="panel-item"><span>THRUSTERS:</span><span style="color:#00ffcc;">READY</span></div>
+    <div class="panel-item"><span>WEAPONS:</span><span style="color:#ff3300;">STANDBY</span></div>
+    <div class="panel-item"><span>GESTURE:</span><span style="color:#00f0ff;">SWIPE OPENED</span></div>
   </div>
 
   <video id="input-video" autoplay playsinline></video>
@@ -81,6 +123,7 @@
     const videoElement = document.getElementById('input-video');
     const loadingElement = document.getElementById('loading');
     const hudMode = document.getElementById('hud-mode');
+    const controlPanel = document.getElementById('control-panel');
     
     // 1. SCENE THREE.JS
     const scene = new THREE.Scene();
@@ -92,26 +135,39 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-    // 2. TẠO HOLOGRAM BỘ GIÁP / LÕI ARC REACTOR (1600 HẠT)
-    const particleCount = 1600;
+    // 2. TẠO MÔ HÌNH BỘ GIÁP IRON MAN DẠNG HẠT 3D (MÔ PHỎNG DÁNG NGHỆ SĨ / KHUNG GIÁP)
+    const particleCount = 2200;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const originalPositions = new Float32Array(particleCount * 3);
     const dirs = new Float32Array(particleCount * 3);
 
-    // Tạo cấu trúc đa tầng (Lõi Arc + Lớp giáp bên ngoài)
     for (let i = 0; i < particleCount; i++) {
-      let r = 1.6;
-      if (i < 300) r = 0.5; // Lõi Arc Reactor bên trong
-      
-      const u = Math.random();
-      const v = Math.random();
-      const theta = u * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * v - 1.0);
+      let x, y, z;
+      const part = Math.random();
 
-      const x = r * Math.sin(phi) * Math.cos(theta);
-      const y = r * Math.sin(phi) * Math.sin(theta);
-      const z = r * Math.cos(phi);
+      if (part < 0.25) { 
+        // Đầu bộ giáp (Mũ bảo hiểm)
+        const u = Math.random() * Math.PI * 2;
+        const v = Math.random() * Math.PI;
+        x = 0.6 * Math.sin(v) * Math.cos(u);
+        y = 1.8 + 0.7 * Math.cos(v);
+        z = 0.6 * Math.sin(v) * Math.sin(u);
+      } else if (part < 0.7) { 
+        // Thân & Ngực (Arc Reactor)
+        const u = Math.random() * Math.PI * 2;
+        const h = (Math.random() - 0.5) * 2.0;
+        const rad = 1.1 - Math.abs(h) * 0.3;
+        x = rad * Math.cos(u);
+        y = h;
+        z = rad * Math.sin(u);
+      } else { 
+        // Vai & Tay giáp
+        const side = Math.random() > 0.5 ? 1 : -1;
+        x = side * (1.3 + Math.random() * 0.5);
+        y = (Math.random() - 0.5) * 1.8;
+        z = (Math.random() - 0.5) * 0.8;
+      }
 
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
@@ -121,7 +177,7 @@
       originalPositions[i * 3 + 1] = y;
       originalPositions[i * 3 + 2] = z;
 
-      const len = Math.sqrt(x * x + y * y + z * z);
+      const len = Math.sqrt(x * x + y * y + z * z) || 1;
       dirs[i * 3] = (x / len) * (1.2 + Math.random() * 1.5);
       dirs[i * 3 + 1] = (y / len) * (1.2 + Math.random() * 1.5);
       dirs[i * 3 + 2] = (z / len) * (1.2 + Math.random() * 1.5);
@@ -131,65 +187,97 @@
 
     const material = new THREE.PointsMaterial({
       color: 0x00f0ff,
-      size: 0.048,
+      size: 0.045,
       transparent: true,
       opacity: 0.85,
       blending: THREE.AdditiveBlending
     });
 
-    const armorHologram = new THREE.Points(geometry, material);
-    scene.add(armorHologram);
+    const ironmanArmor = new THREE.Points(geometry, material);
+    scene.add(ironmanArmor);
 
-    // VÒNG TRÒN HUD XOAY XUNG QUANH (Phong cách Iron Man)
-    const ringGeo = new THREE.RingGeometry(2.2, 2.25, 32);
+    // VÒNG TRÒN HUD
+    const ringGeo = new THREE.RingGeometry(2.4, 2.45, 32);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
     const hudRing = new THREE.Mesh(ringGeo, ringMat);
-    armorHologram.add(hudRing);
+    ironmanArmor.add(hudRing);
 
-    // 3. BIẾN ĐIỀU KHIỂN
+    // 3. BIẾN XỬ LÝ THEO DÕI
     let targetX = 0, targetY = 0;
     let handPinchScale = 1.0;
     let isFist = false;
     let explodeProgress = 0;
 
-    // 4. MEDIAPIPE LITE HANDS
+    // Biến theo dõi thao tác Vuốt mở Panel
+    let lastHandX = null;
+    let isPanelOpen = false;
+
+    // 4. MEDIAPIPE HAND TRACKING
     function onResults(results) {
       loadingElement.style.display = 'none';
       
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const lm = results.multiHandLandmarks[0];
         
-        // Di chuyển
+        // Di chuyển giáp
         targetX = (0.5 - lm[9].x) * 7.5;
         targetY = (0.5 - lm[9].y) * 5.5;
 
-        // Phóng to / Thu nhỏ
+        // Phóng to / Thu nhỏ (Pinch)
         const dx = lm[4].x - lm[8].x;
         const dy = lm[4].y - lm[8].y;
         const distPinch = Math.sqrt(dx * dx + dy * dy);
         handPinchScale = Math.max(0.4, Math.min(distPinch * 5, 2.5));
 
-        // Nắm đấm (Nổ giáp)
-        let totalDist = 0;
-        const tips = [8, 12, 16, 20];
+        // Kiểm tra Xòe 5 ngón tay (Tất cả đầu ngón tay duỗi xa cổ tay)
+        const tips = [4, 8, 12, 16, 20];
+        let openFingers = 0;
         for (let i = 0; i < tips.length; i++) {
           const tx = lm[tips[i]].x - lm[0].x;
           const ty = lm[tips[i]].y - lm[0].y;
-          totalDist += Math.sqrt(tx * tx + ty * ty);
+          if (Math.sqrt(tx * tx + ty * ty) > 0.33) openFingers++;
         }
-        isFist = (totalDist / tips.length) < 0.28;
+        const isOpenHand = (openFingers === 5);
 
+        // Kiểm tra Nắm tay (Nổ giáp)
+        isFist = (openFingers <= 1);
+
+        // --- TÍNH NĂNG VUỐT TAY TRÁI SANG PHẢI ĐỂ MỞ PANEL ---
+        const currentHandX = lm[9].x; // Lấy tọa độ X lòng bàn tay (0 -> 1)
+        
+        if (isOpenHand) {
+          if (lastHandX !== null) {
+            const deltaX = currentHandX - lastHandX;
+            // Nếu xòe tay và di chuyển tay từ Trái sang Phải (Do video mirror nên deltaX giảm)
+            if (deltaX < -0.04) {
+              isPanelOpen = true;
+              controlPanel.classList.add('active');
+            } else if (deltaX > 0.04) {
+              isPanelOpen = false;
+              controlPanel.classList.remove('active');
+            }
+          }
+          lastHandX = currentHandX;
+        } else {
+          lastHandX = null;
+        }
+
+        // Cập nhật trạng thái HUD
         if (isFist) {
-          hudMode.innerText = "MODE: ARMOR DISASSEMBLY (EXPLODE)";
+          hudMode.innerText = "MODE: ARMOR DISASSEMBLY";
           hudMode.style.color = "#ff3300";
+        } else if (isPanelOpen) {
+          hudMode.innerText = "MODE: DIAGNOSTIC PANEL OPEN";
+          hudMode.style.color = "#00ffcc";
         } else {
           hudMode.innerText = "MODE: HOLOGRAM TRACKING ACTIVE";
-          hudMode.style.color = "#00ffcc";
+          hudMode.style.color = "#00f0ff";
         }
 
       } else {
         handPinchScale = 1.0;
         isFist = false;
+        lastHandX = null;
         hudMode.innerText = "SEARCHING FOR HAND SIGNALS...";
         hudMode.style.color = "#ffaa00";
       }
@@ -201,7 +289,7 @@
     
     hands.setOptions({
       maxNumHands: 1,
-      modelComplexity: 0, // Lite mode siêu mượt
+      modelComplexity: 0,
       minDetectionConfidence: 0.5,
       minTrackingConfidence: 0.5
     });
@@ -221,13 +309,13 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Quả cầu đuổi theo tay
-      armorHologram.position.x += (targetX - armorHologram.position.x) * 0.22;
-      armorHologram.position.y += (targetY - armorHologram.position.y) * 0.22;
+      // Bám theo chuyển động tay
+      ironmanArmor.position.x += (targetX - ironmanArmor.position.x) * 0.22;
+      ironmanArmor.position.y += (targetY - ironmanArmor.position.y) * 0.22;
 
-      // Xoay Mô hình & Vòng HUD
-      armorHologram.rotation.y += 0.008;
-      hudRing.rotation.z -= 0.015;
+      // QUAY BỘ GIÁP SANG BÊN TRÁI CONTINUOUSLY (Xoay ngược chiều kim đồng hồ)
+      ironmanArmor.rotation.y -= 0.012; 
+      hudRing.rotation.z += 0.01;
 
       // Hiệu ứng nổ mảnh giáp
       if (isFist) {
@@ -252,13 +340,11 @@
       }
       geometry.attributes.position.needsUpdate = true;
 
-      // Đổi màu khi nổ sang Đỏ Vàng Iron Man
+      // Đổi màu giáp khi nổ
       if (explodeProgress > 0.2) {
         material.color.setHex(0xff2200);
-        ringMat.color.setHex(0xffaa00);
       } else {
         material.color.setHex(0x00f0ff);
-        ringMat.color.setHex(0x00f0ff);
       }
 
       renderer.render(scene, camera);
