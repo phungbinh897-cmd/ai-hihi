@@ -320,22 +320,33 @@ function openCount(lm){
   return c;
 }
 
-// ── RAYCASTER FOR PLANET SELECT ───────────────────────────────────────
+// ── RAYCASTER FOR PLANET SELECT (ĐÃ TỐI ƯU NHẬN DIỆN MẠNH HƠN) ────────
 const raycaster=new THREE.Raycaster();
-raycaster.params.Points={threshold:2};
 
 function pickPlanetAtNDC(nx,ny){
   raycaster.setFromCamera({x:nx,y:ny},cam3);
+  
+  // Va chạm trực tiếp
   const hits=raycaster.intersectObjects(planets.map(p=>p.mesh));
-  if(hits.length){
-    const idx=planets.findIndex(p=>p.mesh===hits[0].object);
-    return idx;
+  if(hits.length>0){
+    return planets.findIndex(p=>p.mesh===hits[0].object);
   }
-  return -1;
+  
+  // Thuật toán khoảng cách gần nhất cho phép chọn linh hoạt
+  let minDistance=Infinity;
+  let targetIdx=-1;
+  planets.forEach((p,idx)=>{
+    const dist=raycaster.ray.distanceToPoint(p.mesh.position);
+    if(dist<(p.pd.r+12)&&dist<minDistance){
+      minDistance=dist;
+      targetIdx=idx;
+    }
+  });
+  return targetIdx;
 }
 
-// convert mirrored video coord (0..1) to NDC
-function toNDC(x,y){ return {nx:(x-.5)*2*0.38, ny:-(y-.5)*2*0.45}; }
+// Chuyển tọa độ webcam sang NDC 3D chuẩn xác
+function toNDC(x,y){ return {nx:(x-.5)*2, ny:-(y-.5)*2}; }
 
 // ── MEDIAPIPE ─────────────────────────────────────────────────────────
 function onHands(res){
@@ -390,7 +401,7 @@ function onHands(res){
     lastHandX=smX; lastHandY=smY;
     clearTimeout(pointHoldTimer); pointHoldTimer=null; pointHoldPlanet=-1;
   }
-  // ── POINT (1 finger): hover + hold-select ──────────────────────────
+  // ── POINT (1 finger): hover + hold-select (ĐÃ GIẢM CHỜ XUỐNG 200MS) ─
   else if(gesture==='POINT'){
     if(!activated) activateSystem();
     const tip=lm[8];
@@ -398,11 +409,10 @@ function onHands(res){
     const hit=pickPlanetAtNDC(nx,ny);
 
     if(hit>=0){
-      // hold for 0.6s to select
       if(pointHoldPlanet!==hit){
         clearTimeout(pointHoldTimer);
         pointHoldPlanet=hit;
-        pointHoldTimer=setTimeout(()=>{ selectPlanet(hit); pointHoldTimer=null; },600);
+        pointHoldTimer=setTimeout(()=>{ selectPlanet(hit); pointHoldTimer=null; },200);
       }
       gsEl.innerText=`POINT → ${planets[hit].pd.name}`;
     } else {
