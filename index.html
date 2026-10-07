@@ -2,183 +2,118 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MAYA / JARVIS AI INTERFACE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MAYA / SOLAR SYSTEM CONTROL</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      overflow:hidden;
+      background:#00010a;
+      font-family:'Segoe UI',Tahoma,sans-serif;
+      color:#00f0ff;
+      user-select:none;
     }
-    body {
-      overflow: hidden;
-      background-color: #020813;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #00f0ff;
-      user-select: none;
-    }
-    #canvas-container {
-      width: 100vw;
-      height: 100vh;
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 1;
-    }
-    video {
-      transform: scaleX(-1);
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 130px;
-      height: 90px;
-      border-radius: 8px;
-      border: 1.5px solid #00f0ff;
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-      z-index: 10;
-      object-fit: cover;
+    #canvas-container{width:100vw;height:100vh;position:absolute;top:0;left:0;z-index:1}
+
+    video{
+      transform:scaleX(-1);
+      position:absolute;top:20px;right:20px;
+      width:160px;height:110px;
+      border-radius:8px;
+      border:1.5px solid #00f0ff;
+      box-shadow:0 0 15px rgba(0,240,255,.4);
+      z-index:10;object-fit:cover;
     }
 
-    /* TIÊU ĐỀ MAYA AI CHÍNH GIỮA TRÊN CÙNG */
-    .top-header {
-      position: absolute;
-      top: 25px;
-      width: 100%;
-      text-align: center;
-      z-index: 10;
-      pointer-events: none;
-    }
-    .main-title {
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: 6px;
-      color: #00f0ff;
-      text-shadow: 0 0 12px #00f0ff;
-    }
-    .sub-title {
-      font-size: 11px;
-      color: #00ffcc;
-      letter-spacing: 2px;
-      margin-top: 4px;
+    /* HAND OVERLAY CANVAS */
+    #hand-canvas{
+      position:absolute;top:20px;right:20px;
+      width:160px;height:110px;
+      border-radius:8px;
+      z-index:11;pointer-events:none;
     }
 
-    /* VÒNG TRÒN LÕI ARC REACTOR CHÍNH GIỮA (GIAO DIỆN MẶC ĐỊNH) */
-    .center-reactor {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 220px;
-      height: 220px;
-      border-radius: 50%;
-      border: 3px solid #00f0ff;
-      box-shadow: 0 0 30px #00f0ff, inset 0 0 25px #00f0ff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 5;
-      transition: all 0.8s ease;
+    .top-header{
+      position:absolute;top:22px;width:100%;
+      text-align:center;z-index:10;pointer-events:none;
     }
-    .center-reactor-inner {
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      border: 2px dashed #00ffcc;
-      animation: spin 12s linear infinite;
+    .main-title{
+      font-size:24px;font-weight:800;letter-spacing:6px;
+      color:#00f0ff;text-shadow:0 0 14px #00f0ff;
     }
-    .center-reactor-core {
-      position: absolute;
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #ffffff 10%, #00f0ff 60%, rgba(0,240,255,0.1) 100%);
-      box-shadow: 0 0 25px #00f0ff;
-    }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
+    #voice-hud{font-size:11px;color:#00ffcc;letter-spacing:2px;margin-top:4px}
 
-    /* Khi kích hoạt bằng tiếng "Chào" hoặc tay, Lõi tâm thu nhỏ và giáp hiện ra */
-    body.active-mode .center-reactor {
-      opacity: 0.3;
-      transform: translate(-50%, -50%) scale(0.7);
+    /* WIDGET LEFT */
+    .widget-left{
+      position:absolute;top:110px;left:22px;
+      width:200px;z-index:10;pointer-events:none;
     }
+    .widget-box{
+      background:rgba(0,8,20,.75);
+      border:1px solid rgba(0,240,255,.35);
+      border-left:3px solid #00f0ff;
+      padding:10px 12px;border-radius:6px;margin-bottom:12px;
+      backdrop-filter:blur(4px);
+    }
+    .widget-title{font-size:10px;font-weight:bold;color:#00f0ff;margin-bottom:5px;letter-spacing:1px}
+    .widget-val{font-size:16px;font-weight:bold;color:#00ffcc}
 
-    /* BẢNG WIDGET TRÁI & PHẢI TRÊN MÀN HÌNH BAN ĐẦU */
-    .widget-left {
-      position: absolute;
-      top: 120px;
-      left: 30px;
-      width: 220px;
-      z-index: 10;
-      pointer-events: none;
+    /* PLANET INFO PANEL */
+    #planet-info{
+      position:absolute;bottom:30px;left:22px;
+      width:240px;padding:14px;
+      background:rgba(0,8,20,.88);
+      border:1.5px solid #00f0ff;
+      box-shadow:0 0 20px rgba(0,240,255,.4);
+      border-radius:10px;z-index:20;
+      backdrop-filter:blur(8px);
+      transition:opacity .4s;
+      opacity:0;
     }
-    .widget-box {
-      background: rgba(2, 12, 27, 0.75);
-      border: 1px solid rgba(0, 240, 255, 0.4);
-      border-left: 3px solid #00f0ff;
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-      backdrop-filter: blur(4px);
-    }
-    .widget-title {
-      font-size: 11px;
-      font-weight: bold;
-      color: #00f0ff;
-      margin-bottom: 6px;
-      letter-spacing: 1px;
-    }
-    .widget-val {
-      font-size: 18px;
-      font-weight: bold;
-      color: #00ffcc;
-    }
+    #planet-info.show{opacity:1}
+    .pi-name{font-size:16px;font-weight:bold;color:#fff;margin-bottom:6px}
+    .pi-row{font-size:11px;margin:4px 0;display:flex;justify-content:space-between}
+    .pi-row span:first-child{color:#7fdcff}
+    .pi-row span:last-child{color:#00ffcc}
 
-    /* BẢNG ĐIỀU KHIỂN TRƯỢT SANG TỪ BÊN PHẢI */
-    #control-panel {
-      position: absolute;
-      bottom: 40px;
-      right: -380px;
-      width: 320px;
-      padding: 20px;
-      background: rgba(2, 12, 27, 0.92);
-      border: 1.5px solid #00f0ff;
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
-      border-radius: 10px;
-      z-index: 30;
-      transition: right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      backdrop-filter: blur(8px);
+    /* CONTROL PANEL RIGHT */
+    #control-panel{
+      position:absolute;bottom:30px;right:-360px;
+      width:300px;padding:16px;
+      background:rgba(0,8,20,.92);
+      border:1.5px solid #00f0ff;
+      box-shadow:0 0 25px rgba(0,240,255,.5);
+      border-radius:10px;z-index:30;
+      transition:right .5s cubic-bezier(.175,.885,.32,1.275);
+      backdrop-filter:blur(8px);
     }
-    #control-panel.active {
-      right: 30px;
+    #control-panel.active{right:22px}
+    .panel-header{
+      font-size:13px;font-weight:bold;
+      border-bottom:1px solid #00f0ff;
+      padding-bottom:6px;margin-bottom:10px;color:#00f0ff;
+      display:flex;justify-content:space-between;
     }
-    .panel-header {
-      font-size: 14px;
-      font-weight: bold;
-      border-bottom: 1px solid #00f0ff;
-      padding-bottom: 6px;
-      margin-bottom: 10px;
-      color: #00f0ff;
-      display: flex;
-      justify-content: space-between;
-    }
-    .panel-item {
-      font-size: 12px;
-      margin: 8px 0;
-      display: flex;
-      justify-content: space-between;
+    .panel-item{font-size:11px;margin:7px 0;display:flex;justify-content:space-between}
+
+    #loading{
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      color:#00f0ff;font-size:15px;letter-spacing:3px;
+      text-shadow:0 0 10px #00f0ff;z-index:20;
+      text-align:center;line-height:1.8;
     }
 
-    #loading {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #00f0ff;
-      font-size: 15px;
-      letter-spacing: 3px;
-      text-shadow: 0 0 10px #00f0ff;
-      z-index: 20;
+    /* GESTURE HUD */
+    #gesture-hud{
+      position:absolute;bottom:30px;
+      left:50%;transform:translateX(-50%);
+      font-size:12px;color:#ffaa00;letter-spacing:2px;
+      z-index:20;text-shadow:0 0 8px #ffaa00;
+      pointer-events:none;
+      opacity:0;transition:opacity .3s;
     }
+    #gesture-hud.show{opacity:1}
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -186,275 +121,433 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
+  <div id="loading">INITIALIZING SOLAR SYSTEM...<br><span style="font-size:11px;color:#7fdcff">LOADING MEDIAPIPE HAND TRACKING</span></div>
 
-  <div id="loading">CONNECTING TO MAYA AI INTERFACE...</div>
-  
   <div class="top-header">
-    <div class="main-title">MAYA AI</div>
-    <div id="voice-hud" class="sub-title">SAY "CHÀO" TO ACTIVATE ARMOR</div>
+    <div class="main-title">MAYA AI — SOLAR CONTROL</div>
+    <div id="voice-hud" class="sub-title">SAY "CHÀO" OR SHOW OPEN HAND TO ACTIVATE</div>
   </div>
 
-  <!-- VÒNG TRÒN ARC REACTOR CHÍNH GIỮA BAN ĐẦU -->
-  <div class="center-reactor">
-    <div class="center-reactor-inner"></div>
-    <div class="center-reactor-core"></div>
-  </div>
-
-  <!-- THÔNG SỐ WIDGET BÊN TRÁI -->
   <div class="widget-left">
     <div class="widget-box">
       <div class="widget-title">SYSTEM STATUS</div>
-      <div class="widget-val">ONLINE</div>
+      <div id="sys-state" class="widget-val" style="font-size:13px">STANDBY</div>
     </div>
     <div class="widget-box">
       <div class="widget-title">VOICE SENSOR</div>
-      <div id="voice-state" class="widget-val" style="font-size:13px; color:#ffaa00;">LISTENING...</div>
+      <div id="voice-state" class="widget-val" style="font-size:12px;color:#ffaa00">LISTENING...</div>
+    </div>
+    <div class="widget-box">
+      <div class="widget-title">HAND GESTURE</div>
+      <div id="hand-state" class="widget-val" style="font-size:12px;color:#aaa">NO HAND</div>
+    </div>
+    <div class="widget-box">
+      <div class="widget-title">SPEED SCALE</div>
+      <div id="speed-disp" class="widget-val">1.0x</div>
     </div>
   </div>
 
-  <!-- BẢNG ĐIỀU KHIỂN BÊN PHẢI -->
+  <!-- Planet info bottom-left -->
+  <div id="planet-info">
+    <div class="pi-name" id="pi-name">—</div>
+    <div class="pi-row"><span>Distance</span><span id="pi-dist">—</span></div>
+    <div class="pi-row"><span>Orbit period</span><span id="pi-orbit">—</span></div>
+    <div class="pi-row"><span>Diameter</span><span id="pi-diam">—</span></div>
+  </div>
+
+  <!-- Control panel right -->
   <div id="control-panel">
     <div class="panel-header">
-      <span>MAYA SYSTEM CONTROL</span>
-      <span style="color:#00ffcc;">ACTIVE</span>
+      <span>MAYA SOLAR CONTROL</span>
+      <span style="color:#00ffcc">ACTIVE</span>
     </div>
-    <div class="panel-item"><span>ARMOR STATE:</span><span style="color:#00ffcc;">MARK 85 DEPLOYED</span></div>
-    <div class="panel-item"><span>ROTATION:</span><span style="color:#00ffcc;">LEFT CONTINUOUS</span></div>
-    <div class="panel-item"><span>VOICE COMMAND:</span><span style="color:#00f0ff;">"CHÀO" DETECTED</span></div>
-    <div class="panel-item"><span>GESTURE PANEL:</span><span style="color:#00f0ff;">SWIPE OPENED</span></div>
+    <div class="panel-item"><span>MODE:</span><span style="color:#00ffcc" id="cp-mode">ORBIT VIEW</span></div>
+    <div class="panel-item"><span>PINCH ZOOM:</span><span style="color:#00f0ff">✓ ENABLED</span></div>
+    <div class="panel-item"><span>HAND DRAG:</span><span style="color:#00f0ff">✓ ENABLED</span></div>
+    <div class="panel-item"><span>SWIPE OPEN:</span><span style="color:#00f0ff">LEFT SWIPE</span></div>
+    <div class="panel-item"><span>VOICE CMD:</span><span style="color:#00f0ff">"CHÀO" DETECTED</span></div>
   </div>
 
   <video id="input-video" autoplay playsinline></video>
+  <canvas id="hand-canvas"></canvas>
   <div id="canvas-container"></div>
+  <div id="gesture-hud">✋ OPEN HAND DETECTED</div>
 
-  <script>
-    const videoElement = document.getElementById('input-video');
-    const loadingElement = document.getElementById('loading');
-    const voiceHud = document.getElementById('voice-hud');
-    const voiceState = document.getElementById('voice-state');
-    const controlPanel = document.getElementById('control-panel');
-    
-    // 1. SCENE THREE.JS
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 6.0;
+<script>
+// ─── REFS ───────────────────────────────────────────────────────────
+const videoEl   = document.getElementById('input-video');
+const loadingEl = document.getElementById('loading');
+const voiceHud  = document.getElementById('voice-hud');
+const voiceState= document.getElementById('voice-state');
+const handState = document.getElementById('hand-state');
+const sysState  = document.getElementById('sys-state');
+const speedDisp = document.getElementById('speed-disp');
+const ctrlPanel = document.getElementById('control-panel');
+const planetInfo= document.getElementById('planet-info');
+const gestureHud= document.getElementById('gesture-hud');
+const handCanvas= document.getElementById('hand-canvas');
+const hCtx      = handCanvas.getContext('2d');
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('canvas-container').appendChild(renderer.domElement);
+// ─── THREE.JS SCENE ─────────────────────────────────────────────────
+const scene    = new THREE.Scene();
+const camThree = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 5000);
+camThree.position.set(0,80,180);
+camThree.lookAt(0,0,0);
 
-    // 2. TẠO MÔ HÌNH BỘ GIÁP 3D HOLOGRAM (BAN ĐẦU ẨN, CHỈ HIỆN KHI KÍCH HOẠT)
-    const armorGroup = new THREE.Group();
-    armorGroup.visible = false; // Ban dau an theo giao dien video
+const renderer = new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-    const wireMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00f0ff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.7
-    });
+// ─── STARFIELD ───────────────────────────────────────────────────────
+const starGeo = new THREE.BufferGeometry();
+const starVerts=[];
+for(let i=0;i<6000;i++){
+  starVerts.push((Math.random()-0.5)*3000,(Math.random()-0.5)*3000,(Math.random()-0.5)*3000);
+}
+starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+const starMat = new THREE.PointsMaterial({color:0xffffff,size:0.6,sizeAttenuation:true});
+scene.add(new THREE.Points(starGeo,starMat));
 
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ffff,
-      transparent: true,
-      opacity: 0.95
-    });
+// ─── AMBIENT & POINT LIGHT ───────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x222244,1.0));
+const sunLight = new THREE.PointLight(0xfff4e0,4,600);
+sunLight.position.set(0,0,0);
+scene.add(sunLight);
 
-    // Mũ bảo hiểm
-    const helmetGeo = new THREE.ConeGeometry(0.55, 0.9, 8, 4);
-    helmetGeo.rotateX(Math.PI);
-    const helmet = new THREE.Mesh(helmetGeo, wireMaterial);
-    helmet.position.y = 1.55;
-    helmet.scale.set(1, 1.1, 0.85);
-    armorGroup.add(helmet);
+// ─── PLANET DATA ─────────────────────────────────────────────────────
+// color, radius, orbit radius, orbit speed, tilt, info
+const planetData=[
+  {name:'Mercury',color:0x8c7f78,radius:0.9, orbit:18, speed:4.15,  tilt:0.03, dist:'57.9M km', period:'88 days',  diam:'4,879 km'},
+  {name:'Venus',  color:0xe8c97a,radius:2.2, orbit:28, speed:1.62,  tilt:2.64, dist:'108.2M km',period:'225 days', diam:'12,104 km'},
+  {name:'Earth',  color:0x2e6fdb,radius:2.3, orbit:40, speed:1.00,  tilt:0.41, dist:'149.6M km',period:'365 days', diam:'12,742 km'},
+  {name:'Mars',   color:0xb5351a,radius:1.5, orbit:55, speed:0.53,  tilt:0.44, dist:'227.9M km',period:'687 days', diam:'6,779 km'},
+  {name:'Jupiter',color:0xc88b3a,radius:8.5, orbit:88, speed:0.084, tilt:0.05, dist:'778.5M km',period:'12 years', diam:'139,820 km'},
+  {name:'Saturn', color:0xe4d191,radius:7.0, orbit:115,speed:0.034, tilt:0.47, dist:'1.43B km',  period:'29 years', diam:'116,460 km'},
+  {name:'Uranus', color:0x7de8e8,radius:4.5, orbit:142,speed:0.012, tilt:1.71, dist:'2.87B km',  period:'84 years', diam:'50,724 km'},
+  {name:'Neptune',color:0x3f54ba,radius:4.2, orbit:168,speed:0.006, tilt:0.49, dist:'4.50B km',  period:'165 years',diam:'49,244 km'},
+];
 
-    // Visor mắt sáng
-    const visorGeo = new THREE.BoxGeometry(0.5, 0.1, 0.3);
-    const visor = new THREE.Mesh(visorGeo, glowMaterial);
-    visor.position.set(0, 1.52, 0.32);
-    armorGroup.add(visor);
+// Earth cloud color
+const earthCloudColor=0xddeeff;
 
-    // Vai & Thân ngực
-    const leftShoulder = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 1), wireMaterial);
-    leftShoulder.position.set(-1.1, 0.8, 0);
-    armorGroup.add(leftShoulder);
+// ─── SUN ─────────────────────────────────────────────────────────────
+const sunGeo  = new THREE.SphereGeometry(10,32,32);
+const sunMat  = new THREE.MeshBasicMaterial({color:0xffdf60});
+const sunMesh = new THREE.Mesh(sunGeo,sunMat);
+scene.add(sunMesh);
 
-    const rightShoulder = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 1), wireMaterial);
-    rightShoulder.position.set(1.1, 0.8, 0);
-    armorGroup.add(rightShoulder);
+// Sun corona glow (additive ring)
+const coronaGeo = new THREE.RingGeometry(11,16,64);
+const coronaMat = new THREE.MeshBasicMaterial({color:0xff8c00,side:THREE.DoubleSide,transparent:true,opacity:0.18});
+scene.add(new THREE.Mesh(coronaGeo,coronaMat));
 
-    const chestGeo = new THREE.CylinderGeometry(0.95, 0.6, 1.2, 7, 2);
-    const chest = new THREE.Mesh(chestGeo, wireMaterial);
-    chest.position.y = 0.6;
-    armorGroup.add(chest);
+// ─── BUILD PLANETS ───────────────────────────────────────────────────
+const planets=[];
+const orbitLines=[];
 
-    const arcGeo = new THREE.RingGeometry(0.12, 0.28, 16);
-    const arcReactor = new THREE.Mesh(arcGeo, glowMaterial);
-    arcReactor.position.set(0, 0.7, 0.58);
-    armorGroup.add(arcReactor);
+planetData.forEach(pd=>{
+  // orbit ring
+  const oCurve = new THREE.EllipseCurve(0,0,pd.orbit,pd.orbit,0,2*Math.PI,false,0);
+  const oPoints= oCurve.getPoints(120);
+  const oGeo   = new THREE.BufferGeometry().setFromPoints(oPoints.map(p=>new THREE.Vector3(p.x,0,p.y)));
+  const oMat   = new THREE.LineBasicMaterial({color:0x1a3a5a,transparent:true,opacity:0.55});
+  const oLine  = new THREE.Line(oGeo,oMat);
+  scene.add(oLine);
+  orbitLines.push(oLine);
 
-    const waistGeo = new THREE.CylinderGeometry(0.58, 0.45, 1.0, 6, 2);
-    const waist = new THREE.Mesh(waistGeo, wireMaterial);
-    waist.position.y = -0.4;
-    armorGroup.add(waist);
+  // planet sphere
+  const geo = new THREE.SphereGeometry(pd.radius,32,32);
+  const mat = new THREE.MeshPhongMaterial({color:pd.color,shininess:30});
 
-    // Đặt bộ giáp ở góc trái màn hình
-    const baseOffsetX = -2.6;
-    armorGroup.position.x = baseOffsetX;
-    armorGroup.position.y = -0.2;
-    scene.add(armorGroup);
+  // Earth: add slight green continent tint
+  if(pd.name==='Earth'){
+    mat.color.set(0x2e6fdb);
+  }
+  if(pd.name==='Mars'){
+    mat.color.set(0xb5351a);
+  }
 
-    // 3. ĐIỀU KHIỂN BẰNG GIỌNG NÓI "CHÀO"
-    let isActivated = false;
-    let isPanelOpen = false;
+  const mesh= new THREE.Mesh(geo,mat);
+  mesh.rotation.z = pd.tilt;
 
-    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // pivot for orbit
+  const pivot= new THREE.Object3D();
+  pivot.add(mesh);
+  scene.add(pivot);
 
-    if (window.SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'vi-VN';
+  // Saturn rings
+  let ringMesh=null;
+  if(pd.name==='Saturn'){
+    const rGeo = new THREE.RingGeometry(pd.radius*1.4, pd.radius*2.4, 64);
+    const rMat = new THREE.MeshBasicMaterial({color:0xd4c07a,side:THREE.DoubleSide,transparent:true,opacity:0.7});
+    ringMesh    = new THREE.Mesh(rGeo,rMat);
+    ringMesh.rotation.x = Math.PI/2.5;
+    mesh.add(ringMesh);
+  }
 
-      recognition.onresult = (event) => {
-        const lastIndex = event.results.length - 1;
-        const transcript = event.results[lastIndex][0].transcript.trim().toLowerCase();
-        voiceState.innerText = `HEARD: "${transcript}"`;
+  // Earth cloud layer
+  let cloudMesh=null;
+  if(pd.name==='Earth'){
+    const cGeo = new THREE.SphereGeometry(pd.radius*1.03,32,32);
+    const cMat = new THREE.MeshPhongMaterial({color:earthCloudColor,transparent:true,opacity:0.25,wireframe:true});
+    cloudMesh  = new THREE.Mesh(cGeo,cMat);
+    mesh.add(cloudMesh);
+  }
 
-        if (transcript.includes('chào') || transcript.includes('hello') || transcript.includes('maya')) {
-          activateArmorSystem();
-        }
-      };
+  // label sprite
+  const canvas2d = document.createElement('canvas');
+  canvas2d.width=256;canvas2d.height=64;
+  const ctx2 = canvas2d.getContext('2d');
+  ctx2.font='bold 28px Segoe UI';
+  ctx2.fillStyle='#00f0ff';
+  ctx2.textAlign='center';
+  ctx2.fillText(pd.name,128,40);
+  const tex = new THREE.CanvasTexture(canvas2d);
+  const spriteMat = new THREE.SpriteMaterial({map:tex,transparent:true,opacity:0.9});
+  const sprite     = new THREE.Sprite(spriteMat);
+  sprite.scale.set(pd.radius*3,pd.radius*0.75,1);
+  sprite.position.set(0,pd.radius+2,0);
+  mesh.add(sprite);
 
-      recognition.onerror = () => {
-        voiceState.innerText = "MIC READY";
-      };
+  planets.push({
+    mesh, pivot, angle:Math.random()*Math.PI*2,
+    data:pd, cloud:cloudMesh
+  });
+});
 
-      recognition.start();
-    } else {
-      voiceState.innerText = "NO VOICE SUPP";
+// ─── STATE ───────────────────────────────────────────────────────────
+let isActivated   = false;
+let isPanelOpen   = false;
+let speedScale    = 1.0;       // pinch zoom → speed
+let camRotY       = 0;         // hand drag rotation
+let camRotX       = -0.35;
+let camDist       = 180;
+let lastHandX     = null;
+let lastHandY     = null;
+let lastPinchDist = null;
+
+// ─── ACTIVATE ────────────────────────────────────────────────────────
+function activateSystem(){
+  if(isActivated) return;
+  isActivated = true;
+  sysState.innerText='ACTIVE';
+  sysState.style.color='#00ffcc';
+  voiceHud.innerText='SOLAR SYSTEM CONTROL — ONLINE';
+  openPanel();
+  speak('Solar system control activated. Welcome back, Sir.');
+  // animate orbit lines to brighter
+  orbitLines.forEach(l=>{ l.material.opacity=0.75; l.material.color.set(0x1e5580); });
+}
+
+function openPanel(){
+  isPanelOpen=true;
+  ctrlPanel.classList.add('active');
+}
+function closePanel(){
+  isPanelOpen=false;
+  ctrlPanel.classList.remove('active');
+}
+
+function speak(txt){
+  if('speechSynthesis' in window){
+    const u=new SpeechSynthesisUtterance(txt);
+    u.lang='en-US';speechSynthesis.speak(u);
+  }
+}
+
+// show gesture hud briefly
+function flashGesture(txt){
+  gestureHud.innerText=txt;
+  gestureHud.classList.add('show');
+  clearTimeout(flashGesture._t);
+  flashGesture._t=setTimeout(()=>gestureHud.classList.remove('show'),1500);
+}
+
+// show planet info
+function showPlanetInfo(pd){
+  document.getElementById('pi-name').innerText=pd.name.toUpperCase();
+  document.getElementById('pi-dist').innerText=pd.dist;
+  document.getElementById('pi-orbit').innerText=pd.period;
+  document.getElementById('pi-diam').innerText=pd.diam;
+  planetInfo.classList.add('show');
+}
+function hidePlanetInfo(){planetInfo.classList.remove('show')}
+
+// ─── VOICE ───────────────────────────────────────────────────────────
+window.SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(window.SpeechRecognition){
+  const rec=new SpeechRecognition();
+  rec.continuous=true; rec.interimResults=false; rec.lang='vi-VN';
+  rec.onresult=e=>{
+    const t=e.results[e.results.length-1][0].transcript.trim().toLowerCase();
+    voiceState.innerText=`"${t}"`;
+    if(/chào|hello|maya|activate/.test(t)) activateSystem();
+    if(/nhanh|faster|speed up/.test(t)){speedScale=Math.min(speedScale*1.5,8);speedDisp.innerText=speedScale.toFixed(1)+'x';}
+    if(/chậm|slower|slow/.test(t)){speedScale=Math.max(speedScale*0.66,0.1);speedDisp.innerText=speedScale.toFixed(1)+'x';}
+    if(/dừng|stop|pause/.test(t)){speedScale=0;speedDisp.innerText='0.0x';}
+  };
+  rec.onerror=()=>{voiceState.innerText='MIC READY'};
+  rec.start();
+}
+
+// ─── MEDIAPIPE HANDS ─────────────────────────────────────────────────
+function countOpenFingers(lm){
+  const tips=[4,8,12,16,20];
+  let c=0;
+  for(let i=0;i<tips.length;i++){
+    const tx=lm[tips[i]].x-lm[0].x, ty=lm[tips[i]].y-lm[0].y;
+    if(Math.sqrt(tx*tx+ty*ty)>0.28) c++;
+  }
+  return c;
+}
+
+function drawHandOverlay(lm){
+  handCanvas.width=160; handCanvas.height=110;
+  hCtx.clearRect(0,0,160,110);
+  const connections=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
+    [5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],
+    [13,17],[17,18],[18,19],[19,20],[0,17]];
+  hCtx.strokeStyle='rgba(0,240,255,0.7)'; hCtx.lineWidth=1.5;
+  connections.forEach(([a,b])=>{
+    hCtx.beginPath();
+    hCtx.moveTo(lm[a].x*160, lm[a].y*110);
+    hCtx.lineTo(lm[b].x*160, lm[b].y*110);
+    hCtx.stroke();
+  });
+  lm.forEach(p=>{
+    hCtx.beginPath();
+    hCtx.arc(p.x*160,p.y*110,2.5,0,2*Math.PI);
+    hCtx.fillStyle='#00ffcc'; hCtx.fill();
+  });
+}
+
+function onHandResults(results){
+  loadingEl.style.display='none';
+  hCtx.clearRect(0,0,handCanvas.width,handCanvas.height);
+
+  if(!results.multiHandLandmarks||!results.multiHandLandmarks.length){
+    handState.innerText='NO HAND'; handState.style.color='#666';
+    lastHandX=null; lastHandY=null; lastPinchDist=null;
+    return;
+  }
+
+  const lm = results.multiHandLandmarks[0];
+  drawHandOverlay(lm);
+
+  const openFingers = countOpenFingers(lm);
+  const isOpen = openFingers>=4;
+  const isFist = openFingers<=1;
+
+  // pinch distance (thumb ↔ index)
+  const px=lm[4].x-lm[8].x, py=lm[4].y-lm[8].y;
+  const pinchDist=Math.sqrt(px*px+py*py);
+
+  // ── OPEN HAND: activate + drag camera ──
+  if(isOpen){
+    handState.innerText='OPEN HAND'; handState.style.color='#00ffcc';
+    if(!isActivated){ activateSystem(); flashGesture('✋ ACTIVATED'); }
+
+    const hx=lm[9].x, hy=lm[9].y;
+
+    // swipe left/right → open/close panel
+    if(lastHandX!==null){
+      const dx=hx-lastHandX;
+      if(dx < -0.06){ openPanel();  flashGesture('→ PANEL OPEN'); }
+      if(dx >  0.06){ closePanel(); flashGesture('← PANEL CLOSE'); }
+      camRotY += (hx-lastHandX)*2.5;
+      camRotX  = Math.max(-1.2,Math.min(0.1,camRotX+(hy-lastHandY)*2.0));
     }
+    lastHandX=hx; lastHandY=hy;
 
-    function activateArmorSystem() {
-      isActivated = true;
-      armorGroup.visible = true; // Hiện giáp ở góc trái
-      isPanelOpen = true;
-      controlPanel.classList.add('active'); // Trượt bảng điều khiển bên phải ra
-      document.body.classList.add('active-mode');
-      voiceHud.innerText = "SYSTEM ACTIVATED - MAYA ONLINE";
-      speakJARVIS("Welcome back, Sir. Armor deployed.");
+    // planet proximity check (index finger tip in 3D space approx)
+    checkPlanetProximity(hx,hy);
+
+  } else if(isFist){
+    // ── FIST: speed up ──
+    handState.innerText='FIST — BOOST'; handState.style.color='#ff6600';
+    speedScale=Math.min(speedScale+0.02,5.0);
+    speedDisp.innerText=speedScale.toFixed(1)+'x';
+    lastHandX=null; lastHandY=null;
+    hidePlanetInfo();
+
+  } else {
+    // ── PARTIAL: pinch zoom = camera distance ──
+    handState.innerText=`PINCH (${openFingers}F)`; handState.style.color='#ffcc00';
+    if(lastPinchDist!==null){
+      const delta=pinchDist-lastPinchDist;
+      camDist=Math.max(40,Math.min(400,camDist-delta*300));
     }
+    lastPinchDist=pinchDist;
+    lastHandX=null; lastHandY=null;
+    hidePlanetInfo();
+  }
 
-    function speakJARVIS(text) {
-      if ('speechSynthesis' in window) {
-        const speech = new SpeechSynthesisUtterance(text);
-        speech.lang = 'en-US';
-        window.speechSynthesis.speak(speech);
-      }
-    }
+  if(!isFist){ lastPinchDist=null; }
+}
 
-    // 4. MEDIAPIPE HAND TRACKING & VUỐT XÒE TAY
-    let targetX = baseOffsetX, targetY = -0.2;
-    let handPinchScale = 1.0;
-    let lastHandX = null;
+// ─── PLANET PROXIMITY (HOVER INFO) ──────────────────────────────────
+const raycaster=new THREE.Raycaster();
+function checkPlanetProximity(hx,hy){
+  // normalized device coords: hand in video = 0..1, flip X (mirror)
+  const nx = 1-(hx); const ny = hy*2-1;
+  raycaster.setFromCamera({x:nx*0.4,y:-ny*0.4},camThree);
+  const meshes=planets.map(p=>p.mesh);
+  const hits=raycaster.intersectObjects(meshes);
+  if(hits.length){ showPlanetInfo(planets.find(p=>p.mesh===hits[0].object).data); }
+  else { hidePlanetInfo(); }
+}
 
-    function onResults(results) {
-      loadingElement.style.display = 'none';
-      
-      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        const lm = results.multiHandLandmarks[0];
-        
-        targetX = baseOffsetX + (0.5 - lm[9].x) * 3.5;
-        targetY = (0.5 - lm[9].y) * 3.5;
+// ─── START MEDIAPIPE ─────────────────────────────────────────────────
+const hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.6,minTrackingConfidence:0.6});
+hands.onResults(onHandResults);
 
-        // Chụm 2 ngón tay thu phóng giáp
-        const dx = lm[4].x - lm[8].x;
-        const dy = lm[4].y - lm[8].y;
-        const distPinch = Math.sqrt(dx * dx + dy * dy);
-        handPinchScale = Math.max(0.5, Math.min(distPinch * 4.5, 2.2));
+const camUtil=new Camera(videoEl,{
+  onFrame:async()=>{ await hands.send({image:videoEl}); },
+  width:480, height:360
+});
+camUtil.start();
 
-        // Kiểm tra xòe 5 ngón tay
-        const tips = [4, 8, 12, 16, 20];
-        let openFingers = 0;
-        for (let i = 0; i < tips.length; i++) {
-          const tx = lm[tips[i]].x - lm[0].x;
-          const ty = lm[tips[i]].y - lm[0].y;
-          if (Math.sqrt(tx * tx + ty * ty) > 0.33) openFingers++;
-        }
-        const isOpenHand = (openFingers === 5);
+// ─── ANIMATION LOOP ──────────────────────────────────────────────────
+const clock=new THREE.Clock();
 
-        // Vuốt xòe tay Trái -> Phải để bật/tắt Bảng điều khiển
-        const currentHandX = lm[9].x;
-        if (isOpenHand) {
-          if (!isActivated) activateArmorSystem(); // Xòe tay cũng giúp kích hoạt hệ thống
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta();
 
-          if (lastHandX !== null) {
-            const deltaX = currentHandX - lastHandX;
-            if (deltaX < -0.04) {
-              isPanelOpen = true;
-              controlPanel.classList.add('active');
-            } else if (deltaX > 0.04) {
-              isPanelOpen = false;
-              controlPanel.classList.remove('active');
-            }
-          }
-          lastHandX = currentHandX;
-        } else {
-          lastHandX = null;
-        }
+  // rotate sun
+  sunMesh.rotation.y+=dt*0.05;
 
-      } else {
-        handPinchScale = 1.0;
-        lastHandX = null;
-      }
-    }
+  // orbit planets
+  planets.forEach(p=>{
+    p.angle += dt * p.data.speed * 0.25 * speedScale;
+    p.mesh.position.set(
+      Math.cos(p.angle)*p.data.orbit,
+      0,
+      Math.sin(p.angle)*p.data.orbit
+    );
+    p.mesh.rotation.y += dt*0.8;
+    if(p.cloud) p.cloud.rotation.y += dt*0.3;
+    p.pivot.rotation.y=0; // orbit via angle, not pivot rotation
+  });
 
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-    });
-    
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 0,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
-    
-    hands.onResults(onResults);
+  // camera orbit from hand drag
+  const cx = Math.sin(camRotY)*camDist*Math.cos(camRotX);
+  const cy = Math.sin(camRotX)*camDist;
+  const cz = Math.cos(camRotY)*camDist*Math.cos(camRotX);
+  camThree.position.lerp(new THREE.Vector3(cx,cy,cz),0.08);
+  camThree.lookAt(0,0,0);
 
-    const cameraUtils = new Camera(videoElement, {
-      onFrame: async () => {
-        await hands.send({ image: videoElement });
-      },
-      width: 320,
-      height: 240
-    });
-    cameraUtils.start();
+  renderer.render(scene,camThree);
+}
+animate();
 
-    // 5. ANIMATION LOOP
-    function animate() {
-      requestAnimationFrame(animate);
-
-      if (armorGroup.visible) {
-        armorGroup.position.x += (targetX - armorGroup.position.x) * 0.18;
-        armorGroup.position.y += (targetY - armorGroup.position.y) * 0.18;
-        armorGroup.scale.set(handPinchScale, handPinchScale, handPinchScale);
-
-        // Xoay bộ giáp vòng tròn sang bên trái liên tục
-        armorGroup.rotation.y -= 0.012; 
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    animate();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
+window.addEventListener('resize',()=>{
+  camThree.aspect=innerWidth/innerHeight;
+  camThree.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
 </body>
 </html>
