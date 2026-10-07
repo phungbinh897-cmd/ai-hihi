@@ -25,7 +25,7 @@ body{overflow:hidden;background:#00010a;font-family:'Segoe UI',sans-serif;color:
 .wt{font-size:9px;font-weight:bold;color:#00f0ff;margin-bottom:4px;letter-spacing:1px}
 .wv{font-size:13px;font-weight:bold;color:#00ffcc}
 
-/* PLANET DETAIL PANEL — big, right side, slides in */
+/* PLANET DETAIL PANEL */
 #pdp{
   position:absolute;top:50%;right:-400px;transform:translateY(-50%);
   width:300px;
@@ -79,7 +79,7 @@ body{overflow:hidden;background:#00010a;font-family:'Segoe UI',sans-serif;color:
 </head>
 <body>
 
-<div id="loading">INITIALIZING SOLAR SYSTEM...<br><span style="font-size:10px;color:#7fdcff">LOADING HAND TRACKING</span></div>
+<div id="loading">INITIALIZING SOLAR SYSTEM...<br><span style="font-size:10px;color:#7fdcff">OPTIMIZING WEBCAM TRACKING</span></div>
 
 <div class="hdr">
   <div class="hdr-t">MAYA AI — SOLAR CONTROL</div>
@@ -109,11 +109,11 @@ body{overflow:hidden;background:#00010a;font-family:'Segoe UI',sans-serif;color:
 <!-- CONTROL PANEL -->
 <div id="cp">
   <div class="cph"><span>MAYA SOLAR CONTROL</span><span style="color:#00ffcc">ACTIVE</span></div>
-  <div class="cpi"><span>✋ Open hand</span><span style="color:#7fdcff">Drag camera</span></div>
-  <div class="cpi"><span>☝️ Point (1 finger)</span><span style="color:#7fdcff">Select planet</span></div>
-  <div class="cpi"><span>🤌 Pinch</span><span style="color:#7fdcff">Zoom camera</span></div>
+  <div class="cpi"><span>✋ Open hand</span><span style="color:#7fdcff">Rotate camera</span></div>
+  <div class="cpi"><span>☝️ Point finger</span><span style="color:#7fdcff">Select planet</span></div>
+  <div class="cpi"><span>🤌 Pinch / Scroll</span><span style="color:#7fdcff">Zoom camera</span></div>
   <div class="cpi"><span>🤜 Fist</span><span style="color:#7fdcff">Speed boost</span></div>
-  <div class="cpi"><span>↔ Swipe open</span><span style="color:#7fdcff">Left swipe</span></div>
+  <div class="cpi"><span>↔ Swipe open</span><span style="color:#7fdcff">Toggle panel</span></div>
 </div>
 
 <div class="cam-wrap">
@@ -177,7 +177,6 @@ scene.add(coronaMesh);
 
 // ── BUILD PLANETS ─────────────────────────────────────────────────────
 const planets=PD.map(pd=>{
-  // orbit line
   const pts=[];
   for(let i=0;i<=128;i++){const a=i/128*Math.PI*2; pts.push(new THREE.Vector3(Math.cos(a)*pd.orb,0,Math.sin(a)*pd.orb));}
   const oLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x1a3a5a,transparent:true,opacity:.5}));
@@ -187,19 +186,16 @@ const planets=PD.map(pd=>{
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(pd.r,40,40),mat);
   scene.add(mesh);
 
-  // Saturn rings
   if(pd.name==='Saturn'){
     const rm=new THREE.Mesh(new THREE.RingGeometry(pd.r*1.45,pd.r*2.5,64),new THREE.MeshBasicMaterial({color:0xd4c07a,side:THREE.DoubleSide,transparent:true,opacity:.72}));
     rm.rotation.x=Math.PI/2.5; mesh.add(rm);
   }
-  // Earth clouds
   let cloud=null;
   if(pd.name==='Earth'){
     cloud=new THREE.Mesh(new THREE.SphereGeometry(pd.r*1.03,32,32),new THREE.MeshPhongMaterial({color:0xddeeff,transparent:true,opacity:.22,wireframe:true}));
     mesh.add(cloud);
   }
 
-  // label
   const lc=document.createElement('canvas'); lc.width=256;lc.height=56;
   const lx=lc.getContext('2d');
   lx.font='bold 26px Segoe UI'; lx.fillStyle='#00f0ff'; lx.textAlign='center';
@@ -219,13 +215,19 @@ let speedScale=1.0;
 let camRotY=0, camRotX=-0.35, camDist=180;
 let camRotYTarget=0, camRotXTarget=-0.35, camDistTarget=180;
 
-// smoothed hand values (EMA)
+// BỘ LỌC NGUYÊN NHAU VÀ LÀM MƯỢT (EMA SMOOTHING)
 let smX=0.5, smY=0.5, smPinch=0.1;
-const ALPHA=0.25; // smoothing factor — higher = more responsive
+const ALPHA=0.35; // Tăng độ nhạy phản hồi đồng thời khử rung
 
 let lastHandX=null, lastHandY=null, lastPinchD=null;
 let prevGesture='', selectedIdx=-1;
 let pointHoldTimer=null, pointHoldPlanet=-1;
+
+// ── MOUSE/TOUCHPAD ZOOM SUPPORT ────────────────────────────────────────
+window.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  camDistTarget = Math.max(25, Math.min(450, camDistTarget + e.deltaY * 0.35));
+}, { passive: false });
 
 // ── PANEL HELPERS ─────────────────────────────────────────────────────
 function activateSystem(){
@@ -243,14 +245,12 @@ pdpClose.addEventListener('click',()=>deselectPlanet());
 
 function selectPlanet(idx){
   if(selectedIdx===idx) return;
-  // deselect old
   if(selectedIdx>=0){ planets[selectedIdx].targetScale=1.0; planets[selectedIdx].selected=false; }
   selectedIdx=idx;
   const p=planets[idx];
   p.selected=true;
-  p.targetScale=2.2; // grow 2.2×
+  p.targetScale=2.2;
 
-  // fill detail panel
   const pd=p.pd;
   pdpEl.style.setProperty('--pc',pd.hex);
   $('pdp-ball').style.background=`radial-gradient(circle at 35% 35%, ${pd.hex}cc, ${pd.hex}44)`;
@@ -263,7 +263,6 @@ function selectPlanet(idx){
   $('pdp-desc').innerText=pd.desc;
   pdpEl.classList.add('show');
 
-  // orbit line highlight
   planets.forEach((pl,i)=>{ pl.oLine.material.color.set(i===idx?0x00f0ff:0x1a3a5a); pl.oLine.material.opacity=i===idx?0.9:0.5; });
   flash(`🪐 ${pd.name.toUpperCase()} SELECTED`);
 }
@@ -275,7 +274,6 @@ function deselectPlanet(){
   planets.forEach(pl=>{ pl.oLine.material.color.set(0x1a3a5a); pl.oLine.material.opacity=0.5; });
 }
 
-// ── GESTURE FLASH ─────────────────────────────────────────────────────
 function flash(txt){ gfEl.innerText=txt; gfEl.classList.add('show'); clearTimeout(flash._t); flash._t=setTimeout(()=>gfEl.classList.remove('show'),1600); }
 
 function speak(t){ if('speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(t);u.lang='en-US';speechSynthesis.speak(u); } }
@@ -310,29 +308,46 @@ function drawHand(lm){
   lm.forEach(p=>{ hCtx.beginPath();hCtx.arc((1-p.x)*160,p.y*120,2.2,0,6.28);hCtx.fillStyle='#00ffcc';hCtx.fill(); });
 }
 
-// finger extend check
-function openCount(lm){
-  let c=0;
-  const tips=[8,12,16,20];
-  tips.forEach(i=>{ if(lm[i].y<lm[i-2].y) c++; }); // tip above pip = extended
-  // thumb
-  if(Math.abs(lm[4].x-lm[3].x)>0.05) c++;
-  return c;
+// KHOẢNG CÁCH EUCLID 2D
+function dist2D(p1, p2){
+  const dx=p1.x-p2.x, dy=p1.y-p2.y;
+  return Math.sqrt(dx*dx + dy*dy);
 }
 
-// ── RAYCASTER FOR PLANET SELECT (ĐÃ TỐI ƯU NHẬN DIỆN MẠNH HƠN) ────────
+// ── TỐI ƯU THUẬT TOÁN NHẬN DIỆN CỬ CHỈ ────────────────────────────────
+function classifyGesture(lm, pinchD){
+  const wrist = lm[0];
+  
+  // Kiểm tra từng ngón có đang duỗi ra so với khớp gập không
+  const isIndexExtended  = dist2D(lm[8], wrist)  > dist2D(lm[6], wrist);
+  const isMiddleExtended = dist2D(lm[12], wrist) > dist2D(lm[10], wrist);
+  const isRingExtended   = dist2D(lm[16], wrist) > dist2D(lm[14], wrist);
+  const isPinkyExtended  = dist2D(lm[20], wrist) > dist2D(lm[18], wrist);
+
+  const extendedFingers = [isIndexExtended, isMiddleExtended, isRingExtended, isPinkyExtended].filter(Boolean).length;
+
+  // 1. PINCH: Ngón cái và ngón trỏ chụm lại gần nhau
+  if (pinchD < 0.075 && extendedFingers <= 2) return 'PINCH';
+
+  // 2. FIST: Tất cả các ngón co lại
+  if (extendedFingers === 0) return 'FIST';
+
+  // 3. POINT: Chỉ duỗi duy nhất ngón trỏ
+  if (isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) return 'POINT';
+
+  // 4. OPEN: Xòe bàn tay (từ 3 ngón trở lên)
+  if (extendedFingers >= 3) return 'OPEN';
+
+  return 'UNKNOWN';
+}
+
 const raycaster=new THREE.Raycaster();
 
 function pickPlanetAtNDC(nx,ny){
   raycaster.setFromCamera({x:nx,y:ny},cam3);
-  
-  // Va chạm trực tiếp
   const hits=raycaster.intersectObjects(planets.map(p=>p.mesh));
-  if(hits.length>0){
-    return planets.findIndex(p=>p.mesh===hits[0].object);
-  }
+  if(hits.length>0) return planets.findIndex(p=>p.mesh===hits[0].object);
   
-  // Thuật toán khoảng cách gần nhất cho phép chọn linh hoạt
   let minDistance=Infinity;
   let targetIdx=-1;
   planets.forEach((p,idx)=>{
@@ -345,10 +360,9 @@ function pickPlanetAtNDC(nx,ny){
   return targetIdx;
 }
 
-// Chuyển tọa độ webcam sang NDC 3D chuẩn xác
 function toNDC(x,y){ return {nx:(x-.5)*2, ny:-(y-.5)*2}; }
 
-// ── MEDIAPIPE ─────────────────────────────────────────────────────────
+// ── MEDIAPIPE OPTIMIZED ───────────────────────────────────────────────
 function onHands(res){
   loadEl.style.display='none';
   hCtx.clearRect(0,0,160,120);
@@ -364,44 +378,35 @@ function onHands(res){
   const lm=res.multiHandLandmarks[0];
   drawHand(lm);
 
-  const nOpen=openCount(lm);
-
-  // pinch distance
-  const px=lm[4].x-lm[8].x, py=lm[4].y-lm[8].y;
-  const pinchD=Math.sqrt(px*px+py*py);
-
-  // wrist pos
+  // Khoảng cách Pinch (Đầu ngón cái #4 & ngón trỏ #8)
+  const pinchD = dist2D(lm[4], lm[8]);
   const wx=lm[0].x, wy=lm[0].y;
 
-  // EMA smooth
+  // Lọc nhiễu làm mượt vị trí
   smX += ALPHA*(wx-smX);
   smY += ALPHA*(wy-smY);
   smPinch += ALPHA*(pinchD-smPinch);
 
-  // ── GESTURE CLASSIFY ──────────────────────────────────────────────
-  let gesture='';
-  if(nOpen>=4)                         gesture='OPEN';
-  else if(nOpen<=1 && smPinch<0.07)    gesture='PINCH';
-  else if(nOpen===1)                   gesture='POINT';
-  else                                 gesture='FIST';
+  const gesture = classifyGesture(lm, smPinch);
 
-  gsEl.innerText=gesture; gsEl.style.color=gesture==='OPEN'?'#00ffcc':gesture==='POINT'?'#ffcc00':gesture==='PINCH'?'#ff9900':'#ff5500';
+  gsEl.innerText=gesture; 
+  gsEl.style.color=gesture==='OPEN'?'#00ffcc':gesture==='POINT'?'#ffcc00':gesture==='PINCH'?'#ff9900':gesture==='FIST'?'#ff5500':'#aaa';
 
-  // ── OPEN HAND: camera drag + activate + panel swipe ────────────────
+  // 1. OPEN HAND: Xoay camera & Quẹt mở/đóng Panel
   if(gesture==='OPEN'){
     if(!activated){ activateSystem(); flash('✋ ACTIVATED'); }
 
     if(lastHandX!==null){
       const dx=smX-lastHandX, dy=smY-lastHandY;
-      camRotYTarget += dx*3.2;
-      camRotXTarget  = Math.max(-1.1,Math.min(0.1,camRotXTarget+dy*2.4));
+      camRotYTarget += dx*3.5;
+      camRotXTarget  = Math.max(-1.1,Math.min(0.1,camRotXTarget+dy*2.5));
       if(dx < -0.055){ openCP(); flash('→ PANEL OPEN'); }
       if(dx >  0.055){ closeCP(); flash('← PANEL CLOSE'); }
     }
     lastHandX=smX; lastHandY=smY;
     clearTimeout(pointHoldTimer); pointHoldTimer=null; pointHoldPlanet=-1;
   }
-  // ── POINT (1 finger): hover + hold-select (ĐÃ GIẢM CHỜ XUỐNG 200MS) ─
+  // 2. POINT: Chỉ ngón trỏ chọn hành tinh
   else if(gesture==='POINT'){
     if(!activated) activateSystem();
     const tip=lm[8];
@@ -412,7 +417,7 @@ function onHands(res){
       if(pointHoldPlanet!==hit){
         clearTimeout(pointHoldTimer);
         pointHoldPlanet=hit;
-        pointHoldTimer=setTimeout(()=>{ selectPlanet(hit); pointHoldTimer=null; },200);
+        pointHoldTimer=setTimeout(()=>{ selectPlanet(hit); pointHoldTimer=null; },180);
       }
       gsEl.innerText=`POINT → ${planets[hit].pd.name}`;
     } else {
@@ -420,19 +425,19 @@ function onHands(res){
     }
     lastHandX=null; lastHandY=null;
   }
-  // ── PINCH: zoom ────────────────────────────────────────────────────
+  // 3. PINCH: Phóng to / Thu nhỏ mượt mà
   else if(gesture==='PINCH'){
     if(lastPinchD!==null){
       const dd=smPinch-lastPinchD;
-      camDistTarget=Math.max(35,Math.min(420,camDistTarget-dd*350));
+      camDistTarget=Math.max(25,Math.min(450,camDistTarget-dd*750));
     }
     lastPinchD=smPinch;
     lastHandX=null; lastHandY=null;
     clearTimeout(pointHoldTimer); pointHoldTimer=null; pointHoldPlanet=-1;
   }
-  // ── FIST: speed boost ─────────────────────────────────────────────
-  else{
-    speedScale=Math.min(speedScale+0.015,6);
+  // 4. FIST: Nắm tay để tăng tốc độ quỹ đạo
+  else if(gesture==='FIST'){
+    speedScale=Math.min(speedScale+0.02,6);
     spdEl.innerText=speedScale.toFixed(1)+'×';
     lastHandX=null; lastHandY=null;
     clearTimeout(pointHoldTimer); pointHoldTimer=null; pointHoldPlanet=-1;
@@ -443,7 +448,12 @@ function onHands(res){
 }
 
 const hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
-hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.65,minTrackingConfidence:0.65});
+hands.setOptions({
+  maxNumHands:1,
+  modelComplexity:1,
+  minDetectionConfidence:0.7,
+  minTrackingConfidence:0.7
+});
 hands.onResults(onHands);
 
 const camUtil=new Camera(vidEl,{onFrame:async()=>{ await hands.send({image:vidEl}); },width:480,height:360});
@@ -460,29 +470,26 @@ function animate(){
   sunMesh.rotation.y+=dt*.05;
   coronaMesh.rotation.z+=dt*.02;
 
-  // smooth camera
-  camRotY+=(camRotYTarget-camRotY)*.09;
-  camRotX+=(camRotXTarget-camRotX)*.09;
-  camDist+=(camDistTarget-camDist)*.09;
+  // Nội suy mượt mà camera
+  camRotY+=(camRotYTarget-camRotY)*.12;
+  camRotX+=(camRotXTarget-camRotX)*.12;
+  camDist+=(camDistTarget-camDist)*.15;
 
   const cx=Math.sin(camRotY)*camDist*Math.cos(camRotX);
   const cy=Math.sin(camRotX)*camDist;
   const cz=Math.cos(camRotY)*camDist*Math.cos(camRotX);
-  cam3.position.lerp(tmpV.set(cx,cy,cz),.12);
+  cam3.position.lerp(tmpV.set(cx,cy,cz),.2);
   cam3.lookAt(0,0,0);
 
-  // orbit + scale planets
   planets.forEach(p=>{
     p.angle+=dt*p.pd.spd*.25*speedScale;
     p.mesh.position.set(Math.cos(p.angle)*p.pd.orb, 0, Math.sin(p.angle)*p.pd.orb);
     p.mesh.rotation.y+=dt*.8;
     if(p.cloud) p.cloud.rotation.y+=dt*.25;
 
-    // smooth scale
     p.baseScale+=(p.targetScale-p.baseScale)*.1;
     p.mesh.scale.setScalar(p.baseScale);
 
-    // pulse glow if selected
     if(p.selected){
       const pulse=1+Math.sin(Date.now()*.004)*.08;
       p.mesh.scale.setScalar(p.baseScale*pulse);
